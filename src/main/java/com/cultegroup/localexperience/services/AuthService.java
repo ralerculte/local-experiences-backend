@@ -10,6 +10,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -23,11 +24,16 @@ public class AuthService {
     private final AuthenticationManager manager;
     private final UserRepository userRepository;
     private final JwtTokenProvider provider;
+    private final BCryptPasswordEncoder encoder;
 
-    public AuthService(AuthenticationManager manager, UserRepository userRepository, JwtTokenProvider provider) {
+    public AuthService(AuthenticationManager manager,
+                       UserRepository userRepository,
+                       JwtTokenProvider provider,
+                       BCryptPasswordEncoder encoder) {
         this.manager = manager;
         this.userRepository = userRepository;
         this.provider = provider;
+        this.encoder = encoder;
     }
 
     public ResponseEntity<?> getAuthResponse(AuthRequestDTO request) {
@@ -43,8 +49,31 @@ public class AuthService {
             }};
             return ResponseEntity.ok(response);
         } catch (AuthenticationException e) {
-            return new ResponseEntity<>("Некорректные данные", HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>("Некорректные данные!", HttpStatus.FORBIDDEN);
         }
+    }
+
+    public ResponseEntity<?> register(AuthRequestDTO request) {
+        String identifier = request.getIdentifier();
+        if (userRepository.existsByEmail(identifier)) {
+            return new ResponseEntity<>("Этот адрес электронной почты уже используется!",
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        if (userRepository.existsByPhoneNumber(identifier)) {
+            return new ResponseEntity<>("Этот номер телефона уже используется!",
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        User user;
+        String password = encoder.encode(request.getPassword());
+        if (identifier.matches(EMAIL_REGEX)) {
+            user = new User(null, null, identifier, null, password);
+        } else {
+            user = new User(null, null, null, identifier, password);
+        }
+        userRepository.save(user);
+        return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     public static User getUserByIdentifier(String identifier, UserRepository userRepository) {

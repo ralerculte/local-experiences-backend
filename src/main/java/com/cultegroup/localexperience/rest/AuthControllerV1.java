@@ -33,4 +33,10 @@ public class AuthControllerV1 {
         logoutHandler.logout(request, response, null);
     }
 
+    @PostMapping("/signup")
+    public ResponseEntity<?> registration(@RequestBody AuthRequestDTO request) {
+        return service.register(request);
+    }
+
+
 }

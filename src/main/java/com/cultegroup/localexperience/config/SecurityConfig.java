@@ -33,7 +33,7 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeRequests(auth -> {
                     auth.antMatchers("/").permitAll();
-                    auth.antMatchers("/api/v1/auth/signin").permitAll();
+                    auth.antMatchers("/api/v1/auth/*").permitAll();
                     auth.anyRequest().authenticated();
                 })
                 .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class)
