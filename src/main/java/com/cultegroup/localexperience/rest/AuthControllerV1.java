@@ -4,13 +4,11 @@ import com.cultegroup.localexperience.services.AuthService;
 import com.cultegroup.localexperience.utils.AuthRequestDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.transaction.Transactional;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -22,6 +20,7 @@ public class AuthControllerV1 {
         this.service = service;
     }
 
+    @Transactional
     @PostMapping("/signin")
     public ResponseEntity<?> authenticate(@RequestBody AuthRequestDTO request) {
         return service.getAuthResponse(request);
@@ -33,10 +32,17 @@ public class AuthControllerV1 {
         logoutHandler.logout(request, response, null);
     }
 
+    @Transactional
     @PostMapping("/signup")
     public ResponseEntity<?> registration(@RequestBody AuthRequestDTO request) {
         return service.register(request);
     }
 
+    @GetMapping("/activate/{id}")
+    public String activate(@PathVariable Long id) {
+        // TODO redirect if mistake
+        service.activate(id);
+        return "redirect:/activated";
+    }
 
 }

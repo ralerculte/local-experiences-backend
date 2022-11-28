@@ -1,5 +1,6 @@
 package com.cultegroup.localexperience.services;
 
+import com.cultegroup.localexperience.model.Status;
 import com.cultegroup.localexperience.model.User;
 import com.cultegroup.localexperience.repo.UserRepository;
 import com.cultegroup.localexperience.security.JwtTokenProvider;
@@ -12,6 +13,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,15 +27,25 @@ public class AuthService {
     private final UserRepository userRepository;
     private final JwtTokenProvider provider;
     private final BCryptPasswordEncoder encoder;
+    private final MailService mailService;
 
     public AuthService(AuthenticationManager manager,
                        UserRepository userRepository,
                        JwtTokenProvider provider,
-                       BCryptPasswordEncoder encoder) {
+                       BCryptPasswordEncoder encoder, MailService mailService) {
         this.manager = manager;
         this.userRepository = userRepository;
         this.provider = provider;
         this.encoder = encoder;
+        this.mailService = mailService;
+    }
+
+    public static User getUserByIdentifier(String identifier, UserRepository userRepository) {
+        return identifier.matches(EMAIL_REGEX)
+                ? userRepository.findByEmail(identifier)
+                .orElseThrow(() -> new UsernameNotFoundException("User doesn't exist"))
+                : userRepository.findByPhoneNumber(identifier)
+                .orElseThrow(() -> new UsernameNotFoundException("User doesn't exist"));
     }
 
     public ResponseEntity<?> getAuthResponse(AuthRequestDTO request) {
@@ -41,8 +53,11 @@ public class AuthService {
             String identifier = request.getIdentifier();
             manager.authenticate(new UsernamePasswordAuthenticationToken(identifier, request.getPassword()));
             User user = getUserByIdentifier(identifier, userRepository);
-            String token = provider.createToken(identifier, user.getId());
+            if (user.getStatus().equals(Status.INACTIVE)) {
+                return new ResponseEntity<>("Электронная почта не подтверждена!", HttpStatus.UNAUTHORIZED);
+            }
 
+            String token = provider.createToken(identifier, user.getId());
             Map<Object, Object> response = new HashMap<>() {{
                 put("identifier", identifier);
                 put("token", token);
@@ -73,15 +88,21 @@ public class AuthService {
             user = new User(null, null, null, identifier, password);
         }
         userRepository.save(user);
+
+        if (StringUtils.hasLength(user.getEmail()) && StringUtils.hasText(user.getEmail())) {
+            // TODO Create different property files with links (local/prod)
+            String message = "Для вступления в культ перейди по ссылке:\n"
+                    + "http://localhost:8080/api/v1/auth/activate/" + user.getId();
+
+            mailService.sendMail(user.getEmail(), "Activation code", message);
+        }
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    public static User getUserByIdentifier(String identifier, UserRepository userRepository) {
-        return identifier.matches(EMAIL_REGEX)
-                ? userRepository.findByEmail(identifier)
-                .orElseThrow(() -> new UsernameNotFoundException("User doesn't exist"))
-                : userRepository.findByPhoneNumber(identifier)
+    public void activate(Long id) {
+        // TODO redirect if mistake
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new UsernameNotFoundException("User doesn't exist"));
+        user.setStatus(Status.ACTIVE);
     }
-
 }

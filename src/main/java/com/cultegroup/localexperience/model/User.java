@@ -18,6 +18,8 @@ public class User {
     private String email;
     @Column(name = "phone_number")
     private String phoneNumber;
+    @Enumerated
+    private Status status;
 
     @JsonIgnore
     private String password;
@@ -34,6 +36,7 @@ public class User {
                 String surname,
                 String email,
                 String phoneNumber,
+                Status status,
                 String password,
                 Set<Experience> experiences,
                 Set<Event> events) {
@@ -41,6 +44,7 @@ public class User {
         this.surname = surname;
         this.email = email;
         this.phoneNumber = phoneNumber;
+        this.status = status;
         this.password = password;
         this.experiences = experiences;
         this.events = events;
@@ -52,6 +56,8 @@ public class User {
         this.email = email;
         this.phoneNumber = phoneNumber;
         this.password = password;
+
+        this.status = Status.INACTIVE;
     }
 
     public Long getId() {
@@ -92,6 +98,14 @@ public class User {
 
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
     }
 
     public String getPassword() {
