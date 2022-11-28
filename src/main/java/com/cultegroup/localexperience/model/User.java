@@ -46,6 +46,14 @@ public class User {
         this.events = events;
     }
 
+    public User(String name, String surname, String email, String phoneNumber, String password) {
+        this.name = name;
+        this.surname = surname;
+        this.email = email;
+        this.phoneNumber = phoneNumber;
+        this.password = password;
+    }
+
     public Long getId() {
         return id;
     }
