@@ -2,6 +2,7 @@ package com.cultegroup.localexperience.rest;
 
 import com.cultegroup.localexperience.services.AuthService;
 import com.cultegroup.localexperience.utils.AuthRequestDTO;
+import com.cultegroup.localexperience.utils.TokenDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
@@ -26,23 +27,34 @@ public class AuthControllerV1 {
         return service.getAuthResponse(request);
     }
 
-    @PostMapping("/signout")
-    public void logout(HttpServletRequest request, HttpServletResponse response) {
-        SecurityContextLogoutHandler logoutHandler = new SecurityContextLogoutHandler();
-        logoutHandler.logout(request, response, null);
-    }
-
     @Transactional
     @PostMapping("/signup")
     public ResponseEntity<?> registration(@RequestBody AuthRequestDTO request) {
         return service.register(request);
     }
 
+    @Transactional
+    @PostMapping("/update")
+    public ResponseEntity<?> update(@RequestBody TokenDTO dto) {
+        return service.updateAccessToken(dto);
+    }
+
+    @Transactional
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(@RequestBody TokenDTO dto) {
+        return service.refresh(dto);
+    }
+
+    @PostMapping("/signout")
+    public void logout(HttpServletRequest request, HttpServletResponse response) {
+        SecurityContextLogoutHandler logoutHandler = new SecurityContextLogoutHandler();
+        logoutHandler.logout(request, response, null);
+    }
+
     @GetMapping("/activate/{id}")
     public String activate(@PathVariable Long id) {
         // TODO redirect if mistake
         service.activate(id);
-        return "redirect:/activated";
+        return "NOT IMPLEMENTED!";
     }
-
 }

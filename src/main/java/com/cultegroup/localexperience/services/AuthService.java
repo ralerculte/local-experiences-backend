@@ -5,6 +5,7 @@ import com.cultegroup.localexperience.model.User;
 import com.cultegroup.localexperience.repo.UserRepository;
 import com.cultegroup.localexperience.security.JwtTokenProvider;
 import com.cultegroup.localexperience.utils.AuthRequestDTO;
+import com.cultegroup.localexperience.utils.TokenDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -29,6 +30,9 @@ public class AuthService {
     private final BCryptPasswordEncoder encoder;
     private final MailService mailService;
 
+    // TODO CHANGE TO !Redis!
+    private final HashMap<String, String> refreshStorage = new HashMap<>();
+
     public AuthService(AuthenticationManager manager,
                        UserRepository userRepository,
                        JwtTokenProvider provider,
@@ -43,9 +47,9 @@ public class AuthService {
     public static User getUserByIdentifier(String identifier, UserRepository userRepository) {
         return identifier.matches(EMAIL_REGEX)
                 ? userRepository.findByEmail(identifier)
-                .orElseThrow(() -> new UsernameNotFoundException("User doesn't exist"))
+                .orElseThrow(() -> new UsernameNotFoundException("Пользователь с такой почтой не найден!"))
                 : userRepository.findByPhoneNumber(identifier)
-                .orElseThrow(() -> new UsernameNotFoundException("User doesn't exist"));
+                .orElseThrow(() -> new UsernameNotFoundException("Пользователь с таким номером телефона не найден!"));
     }
 
     public ResponseEntity<?> getAuthResponse(AuthRequestDTO request) {
@@ -57,14 +61,69 @@ public class AuthService {
                 return new ResponseEntity<>("Электронная почта не подтверждена!", HttpStatus.UNAUTHORIZED);
             }
 
-            String token = provider.createToken(identifier, user.getId());
+            String accessToken = provider.createAccessToken(identifier, user.getId());
+            String refreshToken = provider.createRefreshToken(identifier, user.getId());
+
+            refreshStorage.put(identifier, refreshToken);
             Map<Object, Object> response = new HashMap<>() {{
                 put("identifier", identifier);
-                put("token", token);
+                put("accessToken", accessToken);
+                put("refreshToken", refreshToken);
             }};
             return ResponseEntity.ok(response);
         } catch (AuthenticationException e) {
             return new ResponseEntity<>("Некорректные данные!", HttpStatus.FORBIDDEN);
+        }
+    }
+
+    public ResponseEntity<?> updateAccessToken(TokenDTO dto) {
+        try {
+            String refreshToken = dto.getRefreshToken();
+            if (provider.validateRefreshToken(refreshToken)) {
+                String identifier = provider.getUsernameByRefreshToken(refreshToken);
+                String refresh = refreshStorage.get(identifier);
+
+                if (refresh != null && refresh.equals(refreshToken)) {
+                    User user = getUserByIdentifier(identifier, userRepository);
+                    System.out.println("!");
+                    String access = provider.createAccessToken(identifier, user.getId());
+                    System.out.println("!");
+
+                    Map<Object, Object> response = new HashMap<>();
+                    response.put("accessToken", access);
+                    return ResponseEntity.ok(response);
+                }
+            }
+            return new ResponseEntity<>("Invalid refresh token", HttpStatus.BAD_REQUEST);
+        } catch (AuthenticationException e) {
+            return new ResponseEntity<>("Authentication error", HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    public ResponseEntity<?> refresh(TokenDTO dto) {
+        try {
+            String refreshToken = dto.getRefreshToken();
+            if (refreshToken != null && dto.getAccessToken() != null
+                    && provider.validateRefreshToken(refreshToken)) {
+                String identifier = provider.getUsernameByRefreshToken(refreshToken);
+                String refresh = refreshStorage.get(identifier);
+
+                if (refresh != null && refresh.equals(refreshToken)) {
+                    User user = getUserByIdentifier(identifier, userRepository);
+                    String access = provider.createAccessToken(identifier, user.getId());
+                    String newRefresh = provider.createRefreshToken(identifier, user.getId());
+
+                    refreshStorage.put(identifier, newRefresh);
+                    Map<Object, Object> response = new HashMap<>() {{
+                        put("accessToken", access);
+                        put("refreshToken", newRefresh);
+                    }};
+                    return ResponseEntity.ok(response);
+                }
+            }
+            return new ResponseEntity<>("Invalid refresh token", HttpStatus.BAD_REQUEST);
+        } catch (AuthenticationException e) {
+            return new ResponseEntity<>("Authentication error", HttpStatus.UNAUTHORIZED);
         }
     }
 

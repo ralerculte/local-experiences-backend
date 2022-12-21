@@ -14,6 +14,8 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import java.security.Key;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 
 @Component
@@ -21,15 +23,17 @@ public class JwtTokenProvider {
 
     private final UserDetailsService userDetailsService;
 
-    @Value("${jwt.expiration}")
-    private long validityTime;
+    @Value("${jwt.secret.access}")
+    private String secretAccess;
 
-    @Value("${jwt.secret}")
-    private String secretKey;
+    @Value("${jwt.secret.refresh}")
+    private String secretRefresh;
+
     @Value("${jwt.header}")
     private String header;
 
-    private Key key;
+    private Key keyAccess;
+    private Key keyRefresh;
 
     public JwtTokenProvider(@Qualifier("userDetailsServiceImpl") UserDetailsService userDetailsService) {
         this.userDetailsService = userDetailsService;
@@ -37,24 +41,63 @@ public class JwtTokenProvider {
 
     @PostConstruct
     protected void init() {
-         key = Keys.hmacShaKeyFor(secretKey.getBytes());
+         keyAccess = Keys.hmacShaKeyFor(secretAccess.getBytes());
+         keyRefresh = Keys.hmacShaKeyFor(secretRefresh.getBytes());
     }
 
-    public String createToken(String username, Long id) {
+    public String createAccessToken(String username, Long id) {
+        Date accessExpiration = Date.from(
+                LocalDateTime.now()
+                        .plusMinutes(5)
+                        .atZone(ZoneId.systemDefault())
+                        .toInstant()
+        );
+        return createToken(username, id, accessExpiration, keyAccess);
+    }
+
+    public String createRefreshToken(String username, Long id) {
+        Date accessExpiration = Date.from(
+                LocalDateTime.now()
+                        .plusDays(30)
+                        .atZone(ZoneId.systemDefault())
+                        .toInstant()
+        );
+        return createToken(username, id, accessExpiration, keyRefresh);
+    }
+
+    public boolean validateAccessToken(String token) {
+        return validateToken(token, keyAccess);
+    }
+
+    public boolean validateRefreshToken(String token) {
+        return validateToken(token, keyRefresh);
+    }
+
+    public Authentication getAuthentication(String token) {
+        SecurityUser user = (SecurityUser) userDetailsService.loadUserByUsername(getUsername(token, keyAccess));
+        return new UsernamePasswordAuthenticationToken(user, "", null);
+    }
+
+    public String getUsernameByRefreshToken(String token) {
+        return getUsername(token, keyRefresh);
+    }
+
+    public String resolveToken(HttpServletRequest request) {
+        return request.getHeader(header);
+    }
+
+    private String createToken(String username, Long id, Date accessExpiration, Key key) {
         Claims claims = Jwts.claims().setSubject(username);
         claims.put(username, id);
 
-        Date now = new Date();
-        Date validity = new Date(now.getTime() + validityTime * 1000);
         return Jwts.builder()
                 .setClaims(claims)
-                .setIssuedAt(now)
-                .setExpiration(validity)
+                .setExpiration(accessExpiration)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    public boolean validateToken(String token) {
+    private boolean validateToken(String token, Key key) {
         try {
             Jws<Claims> claimsJws = Jwts.parserBuilder()
                     .setSigningKey(key)
@@ -66,12 +109,7 @@ public class JwtTokenProvider {
         }
     }
 
-    public Authentication getAuthentication(String token) {
-        SecurityUser user = (SecurityUser) userDetailsService.loadUserByUsername(getUsername(token));
-        return new UsernamePasswordAuthenticationToken(user, "", null);
-    }
-
-    public String getUsername(String token) {
+    private String getUsername(String token, Key key) {
         return Jwts.parserBuilder()
                 .setSigningKey(key)
                 .build()
@@ -79,9 +117,4 @@ public class JwtTokenProvider {
                 .getBody()
                 .getSubject();
     }
-
-    public String resolveToken(HttpServletRequest request) {
-        return request.getHeader(header);
-    }
-
 }
