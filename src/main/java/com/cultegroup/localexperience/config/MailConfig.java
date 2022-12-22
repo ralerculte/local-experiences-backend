@@ -32,6 +32,7 @@ public class MailConfig {
 
         Properties properties = sender.getJavaMailProperties();
         properties.setProperty("mail.transport.protocol", protocol);
+
         return sender;
     }
 

@@ -1,8 +1,12 @@
 package com.cultegroup.localexperience.services;
 
+import com.cultegroup.localexperience.DTO.ActivateDTO;
+import com.cultegroup.localexperience.exceptions.InvalidActivationToken;
 import com.cultegroup.localexperience.model.Status;
 import com.cultegroup.localexperience.model.User;
+import com.cultegroup.localexperience.model.VerificationToken;
 import com.cultegroup.localexperience.repo.UserRepository;
+import com.cultegroup.localexperience.repo.VerificationRepository;
 import com.cultegroup.localexperience.security.JwtTokenProvider;
 import com.cultegroup.localexperience.DTO.AuthRequestDTO;
 import com.cultegroup.localexperience.DTO.TokenDTO;
@@ -25,6 +29,7 @@ public class AuthService {
 
     private final AuthenticationManager manager;
     private final UserRepository userRepository;
+    private final VerificationRepository verificationRepository;
     private final JwtTokenProvider provider;
     private final BCryptPasswordEncoder encoder;
     private final MailService mailService;
@@ -34,21 +39,14 @@ public class AuthService {
 
     public AuthService(AuthenticationManager manager,
                        UserRepository userRepository,
-                       JwtTokenProvider provider,
+                       VerificationRepository verificationRepository, JwtTokenProvider provider,
                        BCryptPasswordEncoder encoder, MailService mailService) {
         this.manager = manager;
         this.userRepository = userRepository;
+        this.verificationRepository = verificationRepository;
         this.provider = provider;
         this.encoder = encoder;
         this.mailService = mailService;
-    }
-
-    public User getUserByIdentifier(String identifier) {
-        return identifier.matches(EMAIL_REGEX)
-                ? userRepository.findByEmail(identifier)
-                .orElseThrow(() -> new UsernameNotFoundException("Пользователь с такой почтой не найден!"))
-                : userRepository.findByPhoneNumber(identifier)
-                .orElseThrow(() -> new UsernameNotFoundException("Пользователь с таким номером телефона не найден!"));
     }
 
     public ResponseEntity<?> getAuthResponse(AuthRequestDTO request) {
@@ -150,18 +148,31 @@ public class AuthService {
         userRepository.save(user);
 
         if (user.getEmail() != null && !user.getEmail().isEmpty()) {
-            String message = "Для вступления в культ перейди по ссылке:\n"
-                    + "http://localhost:8080/api/v1/auth/activate/" + user.getId();
-
-            mailService.sendMail(user.getEmail(), "Активация аккаунта на experiences.com", message);
+            mailService.sendMail(user);
         }
         // TODO ADD ACTIVATION BY PHONE NUMBER
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    public void activate(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new UsernameNotFoundException("Пользователя не существует"));
-        user.setStatus(Status.ACTIVE);
+    public ResponseEntity<?> activate(ActivateDTO dto) {
+        try {
+            VerificationToken token = verificationRepository.findByToken(dto.getToken())
+                    .orElseThrow(() -> new InvalidActivationToken("Невалидный verification token"));
+
+            User user = userRepository.findById(token.getUser().getId())
+                    .orElseThrow(() -> new UsernameNotFoundException("Пользователя не существует"));
+            user.setStatus(Status.ACTIVE);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Ошибка верификации: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    private User getUserByIdentifier(String identifier) {
+        return identifier.matches(EMAIL_REGEX)
+                ? userRepository.findByEmail(identifier)
+                .orElseThrow(() -> new UsernameNotFoundException("Пользователь с такой почтой не найден!"))
+                : userRepository.findByPhoneNumber(identifier)
+                .orElseThrow(() -> new UsernameNotFoundException("Пользователь с таким номером телефона не найден!"));
     }
 }

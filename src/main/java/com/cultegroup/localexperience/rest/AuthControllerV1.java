@@ -1,5 +1,6 @@
 package com.cultegroup.localexperience.rest;
 
+import com.cultegroup.localexperience.DTO.ActivateDTO;
 import com.cultegroup.localexperience.services.AuthService;
 import com.cultegroup.localexperience.DTO.AuthRequestDTO;
 import com.cultegroup.localexperience.DTO.TokenDTO;
@@ -21,9 +22,10 @@ public class AuthControllerV1 {
         this.service = service;
     }
 
-    @GetMapping("/activate/{id}")
-    public void activate(@PathVariable Long id) {
-        service.activate(id);
+    @Transactional
+    @PostMapping("/activate")
+    public ResponseEntity<?> activate(@RequestBody ActivateDTO activate) {
+        return service.activate(activate);
     }
 
     @Transactional
