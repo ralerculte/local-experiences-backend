@@ -1,8 +1,8 @@
 package com.cultegroup.localexperience.rest;
 
 import com.cultegroup.localexperience.services.AuthService;
-import com.cultegroup.localexperience.utils.AuthRequestDTO;
-import com.cultegroup.localexperience.utils.TokenDTO;
+import com.cultegroup.localexperience.DTO.AuthRequestDTO;
+import com.cultegroup.localexperience.DTO.TokenDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +19,11 @@ public class AuthControllerV1 {
 
     public AuthControllerV1(AuthService service) {
         this.service = service;
+    }
+
+    @GetMapping("/activate/{id}")
+    public void activate(@PathVariable Long id) {
+        service.activate(id);
     }
 
     @Transactional
@@ -49,12 +54,5 @@ public class AuthControllerV1 {
     public void logout(HttpServletRequest request, HttpServletResponse response) {
         SecurityContextLogoutHandler logoutHandler = new SecurityContextLogoutHandler();
         logoutHandler.logout(request, response, null);
-    }
-
-    @GetMapping("/activate/{id}")
-    public String activate(@PathVariable Long id) {
-        // TODO redirect if mistake
-        service.activate(id);
-        return "NOT IMPLEMENTED!";
     }
 }

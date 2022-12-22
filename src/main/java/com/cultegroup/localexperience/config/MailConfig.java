@@ -21,10 +21,6 @@ public class MailConfig {
     private int port;
     @Value("${spring.mail.protocol}")
     private String protocol;
-    // TODO SHOULD BE OFF
-    @Value("${mail.debug}")
-    private String debug;
-
     @Bean
     public JavaMailSender getMailSender() {
         JavaMailSenderImpl sender = new JavaMailSenderImpl();
@@ -36,8 +32,6 @@ public class MailConfig {
 
         Properties properties = sender.getJavaMailProperties();
         properties.setProperty("mail.transport.protocol", protocol);
-        // TODO OPTIONAL, BETTER OFF
-        properties.setProperty("mail.debug", debug);
         return sender;
     }
 
