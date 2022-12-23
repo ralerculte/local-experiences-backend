@@ -1,4 +1,4 @@
-package com.cultegroup.localexperience.utils;
+package com.cultegroup.localexperience.DTO;
 
 public class AuthRequestDTO {
 

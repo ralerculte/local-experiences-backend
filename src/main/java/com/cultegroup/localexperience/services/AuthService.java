@@ -1,11 +1,15 @@
 package com.cultegroup.localexperience.services;
 
+import com.cultegroup.localexperience.DTO.ActivateDTO;
+import com.cultegroup.localexperience.exceptions.InvalidActivationToken;
 import com.cultegroup.localexperience.model.Status;
 import com.cultegroup.localexperience.model.User;
+import com.cultegroup.localexperience.model.VerificationToken;
 import com.cultegroup.localexperience.repo.UserRepository;
+import com.cultegroup.localexperience.repo.VerificationRepository;
 import com.cultegroup.localexperience.security.JwtTokenProvider;
-import com.cultegroup.localexperience.utils.AuthRequestDTO;
-import com.cultegroup.localexperience.utils.TokenDTO;
+import com.cultegroup.localexperience.DTO.AuthRequestDTO;
+import com.cultegroup.localexperience.DTO.TokenDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,7 +18,6 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,39 +29,35 @@ public class AuthService {
 
     private final AuthenticationManager manager;
     private final UserRepository userRepository;
+    private final VerificationRepository verificationRepository;
     private final JwtTokenProvider provider;
     private final BCryptPasswordEncoder encoder;
     private final MailService mailService;
 
-    // TODO CHANGE TO !Redis!
+    // TODO CHANGE TO DATABASE, REDIS, FOR EXAMPLE
     private final HashMap<String, String> refreshStorage = new HashMap<>();
 
     public AuthService(AuthenticationManager manager,
                        UserRepository userRepository,
-                       JwtTokenProvider provider,
+                       VerificationRepository verificationRepository, JwtTokenProvider provider,
                        BCryptPasswordEncoder encoder, MailService mailService) {
         this.manager = manager;
         this.userRepository = userRepository;
+        this.verificationRepository = verificationRepository;
         this.provider = provider;
         this.encoder = encoder;
         this.mailService = mailService;
-    }
-
-    public static User getUserByIdentifier(String identifier, UserRepository userRepository) {
-        return identifier.matches(EMAIL_REGEX)
-                ? userRepository.findByEmail(identifier)
-                .orElseThrow(() -> new UsernameNotFoundException("Пользователь с такой почтой не найден!"))
-                : userRepository.findByPhoneNumber(identifier)
-                .orElseThrow(() -> new UsernameNotFoundException("Пользователь с таким номером телефона не найден!"));
     }
 
     public ResponseEntity<?> getAuthResponse(AuthRequestDTO request) {
         try {
             String identifier = request.getIdentifier();
             manager.authenticate(new UsernamePasswordAuthenticationToken(identifier, request.getPassword()));
-            User user = getUserByIdentifier(identifier, userRepository);
+
+            User user = getUserByIdentifier(identifier);
             if (user.getStatus().equals(Status.INACTIVE)) {
-                return new ResponseEntity<>("Электронная почта не подтверждена!", HttpStatus.UNAUTHORIZED);
+                // TODO ADD ACTIVATION BY PHONE NUMBER
+                return new ResponseEntity<>("Аккаунт не активирован!", HttpStatus.UNAUTHORIZED);
             }
 
             String accessToken = provider.createAccessToken(identifier, user.getId());
@@ -84,7 +83,7 @@ public class AuthService {
                 String refresh = refreshStorage.get(identifier);
 
                 if (refresh != null && refresh.equals(refreshToken)) {
-                    User user = getUserByIdentifier(identifier, userRepository);
+                    User user = getUserByIdentifier(identifier);
                     System.out.println("!");
                     String access = provider.createAccessToken(identifier, user.getId());
                     System.out.println("!");
@@ -94,9 +93,9 @@ public class AuthService {
                     return ResponseEntity.ok(response);
                 }
             }
-            return new ResponseEntity<>("Invalid refresh token", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Невалидный refresh token", HttpStatus.BAD_REQUEST);
         } catch (AuthenticationException e) {
-            return new ResponseEntity<>("Authentication error", HttpStatus.UNAUTHORIZED);
+            return new ResponseEntity<>("Некорректные данные!", HttpStatus.FORBIDDEN);
         }
     }
 
@@ -109,7 +108,7 @@ public class AuthService {
                 String refresh = refreshStorage.get(identifier);
 
                 if (refresh != null && refresh.equals(refreshToken)) {
-                    User user = getUserByIdentifier(identifier, userRepository);
+                    User user = getUserByIdentifier(identifier);
                     String access = provider.createAccessToken(identifier, user.getId());
                     String newRefresh = provider.createRefreshToken(identifier, user.getId());
 
@@ -121,9 +120,9 @@ public class AuthService {
                     return ResponseEntity.ok(response);
                 }
             }
-            return new ResponseEntity<>("Invalid refresh token", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Невалидный refresh token", HttpStatus.BAD_REQUEST);
         } catch (AuthenticationException e) {
-            return new ResponseEntity<>("Authentication error", HttpStatus.UNAUTHORIZED);
+            return new ResponseEntity<>("Некорректные данные!", HttpStatus.FORBIDDEN);
         }
     }
 
@@ -148,20 +147,32 @@ public class AuthService {
         }
         userRepository.save(user);
 
-        if (StringUtils.hasLength(user.getEmail()) && StringUtils.hasText(user.getEmail())) {
-            // TODO Create different property files with links (local/prod)
-            String message = "Для вступления в культ перейди по ссылке:\n"
-                    + "http://localhost:8080/api/v1/auth/activate/" + user.getId();
-
-            mailService.sendMail(user.getEmail(), "Activation code", message);
+        if (user.getEmail() != null && !user.getEmail().isEmpty()) {
+            mailService.sendMail(user);
         }
+        // TODO ADD ACTIVATION BY PHONE NUMBER
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    public void activate(Long id) {
-        // TODO redirect if mistake
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new UsernameNotFoundException("User doesn't exist"));
-        user.setStatus(Status.ACTIVE);
+    public ResponseEntity<?> activate(ActivateDTO dto) {
+        try {
+            VerificationToken token = verificationRepository.findByToken(dto.getToken())
+                    .orElseThrow(() -> new InvalidActivationToken("Невалидный verification token"));
+
+            User user = userRepository.findById(token.getUser().getId())
+                    .orElseThrow(() -> new UsernameNotFoundException("Пользователя не существует"));
+            user.setStatus(Status.ACTIVE);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Ошибка верификации: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    private User getUserByIdentifier(String identifier) {
+        return identifier.matches(EMAIL_REGEX)
+                ? userRepository.findByEmail(identifier)
+                .orElseThrow(() -> new UsernameNotFoundException("Пользователь с такой почтой не найден!"))
+                : userRepository.findByPhoneNumber(identifier)
+                .orElseThrow(() -> new UsernameNotFoundException("Пользователь с таким номером телефона не найден!"));
     }
 }
