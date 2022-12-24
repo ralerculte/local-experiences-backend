@@ -78,9 +78,7 @@ public class AuthService {
 
                 if (refresh != null && refresh.equals(refreshToken)) {
                     User user = validatorUtils.getUserByIdentifier(identifier);
-                    System.out.println("!");
                     String access = provider.createAccessToken(identifier, user.getId());
-                    System.out.println("!");
 
                     Map<Object, Object> response = new HashMap<>();
                     response.put("accessToken", access);
