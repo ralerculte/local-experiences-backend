@@ -29,6 +29,7 @@ public class MailConfig {
         sender.setPort(port);
         sender.setUsername(username);
         sender.setPassword(password);
+        sender.setDefaultEncoding("UTF-8");
 
         Properties properties = sender.getJavaMailProperties();
         properties.setProperty("mail.transport.protocol", protocol);
