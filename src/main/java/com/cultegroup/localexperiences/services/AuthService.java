@@ -1,22 +1,17 @@
 package com.cultegroup.localexperiences.services;
 
-import com.cultegroup.localexperiences.DTO.ActivateDTO;
-import com.cultegroup.localexperiences.exceptions.InvalidActivationToken;
-import com.cultegroup.localexperiences.model.Status;
-import com.cultegroup.localexperiences.model.User;
-import com.cultegroup.localexperiences.model.VerificationToken;
-import com.cultegroup.localexperiences.repo.UserRepository;
-import com.cultegroup.localexperiences.repo.VerificationRepository;
-import com.cultegroup.localexperiences.security.JwtTokenProvider;
 import com.cultegroup.localexperiences.DTO.AuthRequestDTO;
 import com.cultegroup.localexperiences.DTO.TokenDTO;
+import com.cultegroup.localexperiences.model.Status;
+import com.cultegroup.localexperiences.model.User;
+import com.cultegroup.localexperiences.repo.UserRepository;
+import com.cultegroup.localexperiences.security.JwtTokenProvider;
 import com.cultegroup.localexperiences.utils.ValidatorUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -28,26 +23,24 @@ public class AuthService {
 
     private final AuthenticationManager manager;
     private final UserRepository userRepository;
-    private final VerificationRepository verificationRepository;
     private final JwtTokenProvider provider;
     private final BCryptPasswordEncoder encoder;
-    private final MailService mailService;
     private final ValidatorUtils validatorUtils;
+    private final ActivateService activateService;
 
     // TODO CHANGE TO DATABASE, REDIS, FOR EXAMPLE
     private final HashMap<String, String> refreshStorage = new HashMap<>();
 
     public AuthService(AuthenticationManager manager,
                        UserRepository userRepository,
-                       VerificationRepository verificationRepository, JwtTokenProvider provider,
-                       BCryptPasswordEncoder encoder, MailService mailService, ValidatorUtils validatorUtils) {
+                       JwtTokenProvider provider,
+                       BCryptPasswordEncoder encoder, ValidatorUtils validatorUtils, ActivateService activateService) {
         this.manager = manager;
         this.userRepository = userRepository;
-        this.verificationRepository = verificationRepository;
         this.provider = provider;
         this.encoder = encoder;
-        this.mailService = mailService;
         this.validatorUtils = validatorUtils;
+        this.activateService = activateService;
     }
 
     public ResponseEntity<?> getAuthResponse(AuthRequestDTO request) {
@@ -146,26 +139,9 @@ public class AuthService {
         } else {
             user = new User(null, null, null, identifier, password);
         }
+
         userRepository.save(user);
-
-        if (user.getEmail() != null && !user.getEmail().isEmpty()) {
-            mailService.sendMail(user);
-        }
-        // TODO ADD ACTIVATION BY PHONE NUMBER
+        activateService.sendActivationMessage(user);
         return new ResponseEntity<>(HttpStatus.CREATED);
-    }
-
-    public ResponseEntity<?> activate(ActivateDTO dto) {
-        try {
-            VerificationToken token = verificationRepository.findByToken(dto.getToken())
-                    .orElseThrow(() -> new InvalidActivationToken("Невалидный verification token"));
-
-            User user = userRepository.findById(token.getUser().getId())
-                    .orElseThrow(() -> new UsernameNotFoundException("Пользователя не существует"));
-            user.setStatus(Status.ACTIVE);
-            return new ResponseEntity<>(HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>("Ошибка верификации: " + e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
     }
 }
