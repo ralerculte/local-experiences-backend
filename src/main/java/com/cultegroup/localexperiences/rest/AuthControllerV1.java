@@ -3,6 +3,9 @@ package com.cultegroup.localexperiences.rest;
 import com.cultegroup.localexperiences.DTO.AuthRequestDTO;
 import com.cultegroup.localexperiences.DTO.TokenDTO;
 import com.cultegroup.localexperiences.services.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +19,8 @@ import javax.transaction.Transactional;
 
 @RestController
 @RequestMapping("/api/v1/auth")
+@Tag(name = "Authentication controller",
+        description = "Контроллер, обрабатывающй запросы, связанные с регистрацией, авторизацией, обновлением access/refresh токенов.")
 public class AuthControllerV1 {
 
     private final AuthService service;
@@ -26,29 +31,42 @@ public class AuthControllerV1 {
 
     @Transactional
     @PostMapping("/signin")
-    public ResponseEntity<?> authenticate(@RequestBody AuthRequestDTO request) {
+    @Operation(summary = "Авторизация пользователя. В теле ответа возвращаются access и refresh токены.")
+    public ResponseEntity<?> authenticate(
+            @Parameter(description = "DTO, содержащее в себе идентификатор и пароль.")
+            @RequestBody AuthRequestDTO request) {
         return service.getAuthResponse(request);
     }
 
     @Transactional
     @PostMapping("/signup")
-    public ResponseEntity<?> registration(@RequestBody AuthRequestDTO request) {
+    @Operation(summary = "Регистрация пользователя.")
+    public ResponseEntity<?> registration(
+            @Parameter(description = "DTO, содержащее в себе идентификатор и пароль.")
+            @RequestBody AuthRequestDTO request) {
         return service.register(request);
     }
 
     @Transactional
     @PostMapping("/update")
-    public ResponseEntity<?> update(@RequestBody TokenDTO dto) {
+    @Operation(summary = "Обновление access токена. В теле ответа возвращается access токен.")
+    public ResponseEntity<?> update(
+            @Parameter(description = "DTO, содержащее в себе токены.")
+            @RequestBody TokenDTO dto) {
         return service.updateAccessToken(dto);
     }
 
     @Transactional
     @PostMapping("/refresh")
-    public ResponseEntity<?> refresh(@RequestBody TokenDTO dto) {
+    @Operation(summary = "Получение новых refresh & access токенов.")
+    public ResponseEntity<?> refresh(
+            @Parameter(description = "DTO, содержащее в себе токены.")
+            @RequestBody TokenDTO dto) {
         return service.refresh(dto);
     }
 
     @PostMapping("/signout")
+    @Operation(summary = "Выход из учётной записи.")
     public void logout(HttpServletRequest request, HttpServletResponse response) {
         SecurityContextLogoutHandler logoutHandler = new SecurityContextLogoutHandler();
         logoutHandler.logout(request, response, null);
