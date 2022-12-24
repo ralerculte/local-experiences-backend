@@ -19,9 +19,6 @@ public class MailService {
     @Value("${spring.mail.username}")
     private String username;
 
-    @Value("${activation.subject}")
-    private String subject;
-
     public MailService(JavaMailSender sender, VerificationRepository verificationRepository) {
         this.sender = sender;
         this.verificationRepository = verificationRepository;
@@ -33,6 +30,7 @@ public class MailService {
         String token = UUID.randomUUID().toString();
         String text = "Для вступления в культ перейди по ссылке:\n"
                 + "http://localhost:8080/activate/" + token;
+        String subject = "Активируй впечатления!";
 
         verificationRepository.save(new VerificationToken(token, user));
 
