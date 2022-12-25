@@ -5,6 +5,10 @@ import com.cultegroup.localexperiences.DTO.TokenDTO;
 import com.cultegroup.localexperiences.services.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
@@ -32,6 +36,10 @@ public class AuthControllerV1 {
     @Transactional
     @PostMapping("/signin")
     @Operation(summary = "Авторизация пользователя. В теле ответа возвращаются access и refresh токены.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "403", description = "Невалидные данные.", content = {@Content(schema = @Schema())}),
+            @ApiResponse(responseCode = "200", description = "Успешная авторизация.", content = {@Content(schema = @Schema())})
+    })
     public ResponseEntity<?> authenticate(
             @Parameter(description = "DTO, содержащее в себе идентификатор и пароль.")
             @RequestBody AuthRequestDTO request) {
@@ -41,6 +49,10 @@ public class AuthControllerV1 {
     @Transactional
     @PostMapping("/signup")
     @Operation(summary = "Регистрация пользователя.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Аккаунт уже создан.", content = {@Content(schema = @Schema())}),
+            @ApiResponse(responseCode = "201", description = "Аккаунт создан.", content = {@Content(schema = @Schema())})
+    })
     public ResponseEntity<?> registration(
             @Parameter(description = "DTO, содержащее в себе идентификатор и пароль.")
             @RequestBody AuthRequestDTO request) {
@@ -50,6 +62,10 @@ public class AuthControllerV1 {
     @Transactional
     @PostMapping("/update")
     @Operation(summary = "Обновление access токена. В теле ответа возвращается access токен.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Невалидный refresh токен.", content = {@Content(schema = @Schema())}),
+            @ApiResponse(responseCode = "200", description = "Успешное обновление access токена.", content = {@Content(schema = @Schema())})
+    })
     public ResponseEntity<?> update(
             @Parameter(description = "DTO, содержащее в себе токены.")
             @RequestBody TokenDTO dto) {
@@ -59,6 +75,10 @@ public class AuthControllerV1 {
     @Transactional
     @PostMapping("/refresh")
     @Operation(summary = "Получение новых refresh & access токенов.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Невалидные токены.", content = {@Content(schema = @Schema())}),
+            @ApiResponse(responseCode = "200", description = "Успешное обновление токенов.", content = {@Content(schema = @Schema())})
+    })
     public ResponseEntity<?> refresh(
             @Parameter(description = "DTO, содержащее в себе токены.")
             @RequestBody TokenDTO dto) {
