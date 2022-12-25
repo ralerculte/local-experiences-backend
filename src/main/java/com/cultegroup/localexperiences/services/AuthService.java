@@ -70,52 +70,44 @@ public class AuthService {
     }
 
     public ResponseEntity<?> updateAccessToken(TokenDTO dto) {
-        try {
-            String refreshToken = dto.getRefreshToken();
-            if (provider.validateRefreshToken(refreshToken)) {
-                String identifier = provider.getUsernameByRefreshToken(refreshToken);
-                String refresh = refreshStorage.get(identifier);
+        String refreshToken = dto.getRefreshToken();
+        if (provider.validateRefreshToken(refreshToken)) {
+            String identifier = provider.getUsernameByRefreshToken(refreshToken);
+            String refresh = refreshStorage.get(identifier);
 
-                if (refresh != null && refresh.equals(refreshToken)) {
-                    User user = validatorUtils.getUserByIdentifier(identifier);
-                    String access = provider.createAccessToken(identifier, user.getId());
+            if (refresh != null && refresh.equals(refreshToken)) {
+                User user = validatorUtils.getUserByIdentifier(identifier);
+                String access = provider.createAccessToken(identifier, user.getId());
 
-                    Map<Object, Object> response = new HashMap<>();
-                    response.put("accessToken", access);
-                    return ResponseEntity.ok(response);
-                }
+                Map<Object, Object> response = new HashMap<>();
+                response.put("accessToken", access);
+                return ResponseEntity.ok(response);
             }
-            return new ResponseEntity<>("Невалидный refresh token", HttpStatus.BAD_REQUEST);
-        } catch (AuthenticationException e) {
-            return new ResponseEntity<>("Некорректные данные!", HttpStatus.FORBIDDEN);
         }
+        return new ResponseEntity<>("Невалидный refresh токен", HttpStatus.BAD_REQUEST);
     }
 
     public ResponseEntity<?> refresh(TokenDTO dto) {
-        try {
-            String refreshToken = dto.getRefreshToken();
-            if (refreshToken != null && dto.getAccessToken() != null
-                    && provider.validateRefreshToken(refreshToken)) {
-                String identifier = provider.getUsernameByRefreshToken(refreshToken);
-                String refresh = refreshStorage.get(identifier);
+        String refreshToken = dto.getRefreshToken();
+        if (refreshToken != null && dto.getAccessToken() != null
+                && provider.validateRefreshToken(refreshToken)) {
+            String identifier = provider.getUsernameByRefreshToken(refreshToken);
+            String refresh = refreshStorage.get(identifier);
 
-                if (refresh != null && refresh.equals(refreshToken)) {
-                    User user = validatorUtils.getUserByIdentifier(identifier);
-                    String access = provider.createAccessToken(identifier, user.getId());
-                    String newRefresh = provider.createRefreshToken(identifier, user.getId());
+            if (refresh != null && refresh.equals(refreshToken)) {
+                User user = validatorUtils.getUserByIdentifier(identifier);
+                String access = provider.createAccessToken(identifier, user.getId());
+                String newRefresh = provider.createRefreshToken(identifier, user.getId());
 
-                    refreshStorage.put(identifier, newRefresh);
-                    Map<Object, Object> response = new HashMap<>() {{
-                        put("accessToken", access);
-                        put("refreshToken", newRefresh);
-                    }};
-                    return ResponseEntity.ok(response);
-                }
+                refreshStorage.put(identifier, newRefresh);
+                Map<Object, Object> response = new HashMap<>() {{
+                    put("accessToken", access);
+                    put("refreshToken", newRefresh);
+                }};
+                return ResponseEntity.ok(response);
             }
-            return new ResponseEntity<>("Невалидный refresh token", HttpStatus.BAD_REQUEST);
-        } catch (AuthenticationException e) {
-            return new ResponseEntity<>("Некорректные данные!", HttpStatus.FORBIDDEN);
         }
+        return new ResponseEntity<>("Невалидный refresh токен", HttpStatus.BAD_REQUEST);
     }
 
     public ResponseEntity<?> register(AuthRequestDTO request) {
