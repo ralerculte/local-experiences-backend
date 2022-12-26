@@ -2,8 +2,10 @@ package com.cultegroup.localexperiences.services;
 
 import com.cultegroup.localexperiences.DTO.AuthRequestDTO;
 import com.cultegroup.localexperiences.DTO.TokenDTO;
+import com.cultegroup.localexperiences.model.RefreshToken;
 import com.cultegroup.localexperiences.model.Status;
 import com.cultegroup.localexperiences.model.User;
+import com.cultegroup.localexperiences.repo.RefreshRepository;
 import com.cultegroup.localexperiences.repo.UserRepository;
 import com.cultegroup.localexperiences.security.JwtTokenProvider;
 import com.cultegroup.localexperiences.utils.ValidatorUtils;
@@ -23,20 +25,19 @@ public class AuthService {
 
     private final AuthenticationManager manager;
     private final UserRepository userRepository;
+    private final RefreshRepository refreshRepository;
     private final JwtTokenProvider provider;
     private final BCryptPasswordEncoder encoder;
     private final ValidatorUtils validatorUtils;
     private final ActivateService activateService;
 
-    // TODO CHANGE TO DATABASE, REDIS, FOR EXAMPLE
-    private final HashMap<String, String> refreshStorage = new HashMap<>();
-
     public AuthService(AuthenticationManager manager,
                        UserRepository userRepository,
-                       JwtTokenProvider provider,
+                       RefreshRepository refreshRepository, JwtTokenProvider provider,
                        BCryptPasswordEncoder encoder, ValidatorUtils validatorUtils, ActivateService activateService) {
         this.manager = manager;
         this.userRepository = userRepository;
+        this.refreshRepository = refreshRepository;
         this.provider = provider;
         this.encoder = encoder;
         this.validatorUtils = validatorUtils;
@@ -57,7 +58,8 @@ public class AuthService {
             String accessToken = provider.createAccessToken(identifier, user.getId());
             String refreshToken = provider.createRefreshToken(identifier, user.getId());
 
-            refreshStorage.put(identifier, refreshToken);
+            refreshRepository.save(new RefreshToken(refreshToken, user));
+
             Map<Object, Object> response = new HashMap<>() {{
                 put("identifier", identifier);
                 put("accessToken", accessToken);
@@ -73,10 +75,10 @@ public class AuthService {
         String refreshToken = dto.getRefreshToken();
         if (provider.validateRefreshToken(refreshToken)) {
             String identifier = provider.getUsernameByRefreshToken(refreshToken);
-            String refresh = refreshStorage.get(identifier);
+            User user = validatorUtils.getUserByIdentifier(identifier);
+            RefreshToken refresh = refreshRepository.findByUser(user).orElse(null);
 
-            if (refresh != null && refresh.equals(refreshToken)) {
-                User user = validatorUtils.getUserByIdentifier(identifier);
+            if (refresh != null && refresh.getToken().equals(refreshToken)) {
                 String access = provider.createAccessToken(identifier, user.getId());
 
                 Map<Object, Object> response = new HashMap<>();
@@ -92,14 +94,14 @@ public class AuthService {
         if (refreshToken != null && dto.getAccessToken() != null
                 && provider.validateRefreshToken(refreshToken)) {
             String identifier = provider.getUsernameByRefreshToken(refreshToken);
-            String refresh = refreshStorage.get(identifier);
+            User user = validatorUtils.getUserByIdentifier(identifier);
+            RefreshToken refresh = refreshRepository.findByUser(user).orElse(null);
 
-            if (refresh != null && refresh.equals(refreshToken)) {
-                User user = validatorUtils.getUserByIdentifier(identifier);
+            if (refresh != null && refresh.getToken().equals(refreshToken)) {
                 String access = provider.createAccessToken(identifier, user.getId());
                 String newRefresh = provider.createRefreshToken(identifier, user.getId());
 
-                refreshStorage.put(identifier, newRefresh);
+                refreshRepository.save(new RefreshToken(newRefresh, user));
                 Map<Object, Object> response = new HashMap<>() {{
                     put("accessToken", access);
                     put("refreshToken", newRefresh);

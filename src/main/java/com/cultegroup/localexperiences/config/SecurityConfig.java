@@ -34,7 +34,7 @@ public class SecurityConfig {
                 .authorizeRequests(auth -> {
                     auth.antMatchers("/api/v1/**").permitAll();
                     auth.antMatchers("/v3/api-docs/**").permitAll();
-                    auth.antMatchers("/swagger-ui/**").permitAll();
+                    auth.antMatchers("/swagger/**").permitAll();
                     auth.anyRequest().authenticated();
                 })
                 .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class)
