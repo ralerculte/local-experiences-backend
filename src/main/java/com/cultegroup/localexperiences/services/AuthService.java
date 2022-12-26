@@ -1,6 +1,6 @@
 package com.cultegroup.localexperiences.services;
 
-import com.cultegroup.localexperiences.DTO.AuthRequestDTO;
+import com.cultegroup.localexperiences.DTO.UserInfoDTO;
 import com.cultegroup.localexperiences.DTO.TokenDTO;
 import com.cultegroup.localexperiences.model.RefreshToken;
 import com.cultegroup.localexperiences.model.Status;
@@ -44,7 +44,7 @@ public class AuthService {
         this.activateService = activateService;
     }
 
-    public ResponseEntity<?> getAuthResponse(AuthRequestDTO request) {
+    public ResponseEntity<?> getAuthResponse(UserInfoDTO request) {
         try {
             String identifier = request.getIdentifier();
             manager.authenticate(new UsernamePasswordAuthenticationToken(identifier, request.getPassword()));
@@ -112,7 +112,7 @@ public class AuthService {
         return new ResponseEntity<>("Невалидный refresh токен", HttpStatus.BAD_REQUEST);
     }
 
-    public ResponseEntity<?> register(AuthRequestDTO request) {
+    public ResponseEntity<?> register(UserInfoDTO request) {
         String identifier = request.getIdentifier();
         if (userRepository.existsByEmail(identifier)) {
             return new ResponseEntity<>("Этот адрес электронной почты уже используется!",

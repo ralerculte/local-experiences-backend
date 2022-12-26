@@ -1,6 +1,6 @@
 package com.cultegroup.localexperiences.rest;
 
-import com.cultegroup.localexperiences.DTO.AuthRequestDTO;
+import com.cultegroup.localexperiences.DTO.UserInfoDTO;
 import com.cultegroup.localexperiences.DTO.TokenDTO;
 import com.cultegroup.localexperiences.services.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,7 +42,7 @@ public class AuthControllerV1 {
     })
     public ResponseEntity<?> authenticate(
             @Parameter(description = "DTO, содержащее в себе идентификатор и пароль.")
-            @RequestBody AuthRequestDTO request) {
+            @RequestBody UserInfoDTO request) {
         return service.getAuthResponse(request);
     }
 
@@ -55,7 +55,7 @@ public class AuthControllerV1 {
     })
     public ResponseEntity<?> registration(
             @Parameter(description = "DTO, содержащее в себе идентификатор и пароль.")
-            @RequestBody AuthRequestDTO request) {
+            @RequestBody UserInfoDTO request) {
         return service.register(request);
     }
 

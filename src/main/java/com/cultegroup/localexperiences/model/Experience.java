@@ -6,28 +6,18 @@ import javax.persistence.*;
 
 @Entity
 @Table(name = "experiences")
-@Schema(name = """
-        Таблица, описывающая впечатления.
-        Впечатление - событие, которое создаётся организатором. Для всех остальных пользователей создаются конкретные ивенты.
-        """)
 public class Experience {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Schema(name = "Уникальный идентификатор.")
     private Long id;
-    @Schema(name = "Название впечатления.")
     private String name;
-    @Schema(name = "Место проведения.")
     private String location;
-    @Schema(name = "Описание впечатления.")
     private String description;
-    @Schema(name = "Общий рейтинг впечатления, который формируется на основе всех локальных рейтингов у дочерних ивентов.")
     private Double rating;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    @Schema(name = "Пользователь-организатор впечатления.")
     private User user;
 
     public Experience() {

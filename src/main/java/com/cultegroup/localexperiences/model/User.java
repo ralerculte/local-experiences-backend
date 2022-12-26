@@ -9,35 +9,25 @@ import java.util.Set;
 
 @Entity
 @Table(name = "users")
-@Schema(name = "Таблица описывающая пользователей.")
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Schema(name = "Уникальный идентификатор.")
     private Long id;
-    @Schema(name = "Имя пользователя.")
     private String name;
-    @Schema(name = "Фамилия пользователя.")
     private String surname;
-    @Schema(name = "Электронная почта пользователя.")
     private String email;
     @Column(name = "phone_number")
-    @Schema(name = "Номер телефона пользователя.")
     private String phoneNumber;
     @Enumerated
-    @Schema(name = "Статус, показывающий активирован ли аккаунт.")
     private Status status;
 
     @JsonIgnore
-    @Schema(name = "Пароль пользователя.")
     private String password;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Schema(name = "Набор впечатлений, организатором которых является пользователь.")
     private Set<Experience> experiences = new HashSet<>();
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Schema(name = "Набор ивентов, в которых участвовал пользователь.")
     private Set<Event> events = new HashSet<>();
 
     public User() {
