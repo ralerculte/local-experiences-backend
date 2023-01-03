@@ -1,5 +1,6 @@
 package com.cultegroup.localexperiences.rest;
 
+import com.cultegroup.localexperiences.DTO.EmailDTO;
 import com.cultegroup.localexperiences.DTO.UserInfoDTO;
 import com.cultegroup.localexperiences.DTO.TokenDTO;
 import com.cultegroup.localexperiences.services.AuthService;
@@ -31,6 +32,19 @@ public class AuthControllerV1 {
 
     public AuthControllerV1(AuthService service) {
         this.service = service;
+    }
+
+    @Transactional
+    @PostMapping("/existence")
+    @Operation(summary = "Проверка существует ли пользователь с указанной электронной почтой.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "404", description = "Учётная запись не найдена.", content = {@Content(schema = @Schema())}),
+            @ApiResponse(responseCode = "200", description = "Учётная запись найдена.", content = {@Content(schema = @Schema())})
+    })
+    public ResponseEntity<?> isExist(
+            @Parameter(description = "DTO, содержащее адрес электронной почты.")
+            @RequestBody EmailDTO email) {
+        return service.isExist(email);
     }
 
     @Transactional

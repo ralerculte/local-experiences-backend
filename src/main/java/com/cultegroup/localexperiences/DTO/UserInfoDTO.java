@@ -6,12 +6,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public class UserInfoDTO {
 
     @Schema(name = "Идентификатор пользователя. [На данный момент только email]")
-    private String identifier;
+    private String email;
     @Schema(name = "Пароль пользователя.")
     private String password;
 
-    public String getIdentifier() {
-        return identifier;
+    public String getEmail() {
+        return email;
     }
 
     public String getPassword() {

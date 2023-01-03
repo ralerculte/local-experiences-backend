@@ -16,8 +16,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String identifier) throws UsernameNotFoundException {
-        User user = validatorUtils.getUserByIdentifier(identifier);
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        User user = validatorUtils.getUserByEmail(email);
         return new SecurityUser(
                 user.getId(),
                 user.getName(),

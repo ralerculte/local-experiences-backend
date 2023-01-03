@@ -1,5 +1,6 @@
 package com.cultegroup.localexperiences.services;
 
+import com.cultegroup.localexperiences.DTO.EmailDTO;
 import com.cultegroup.localexperiences.DTO.UserInfoDTO;
 import com.cultegroup.localexperiences.DTO.TokenDTO;
 import com.cultegroup.localexperiences.model.RefreshToken;
@@ -9,6 +10,7 @@ import com.cultegroup.localexperiences.repo.RefreshRepository;
 import com.cultegroup.localexperiences.repo.UserRepository;
 import com.cultegroup.localexperiences.security.JwtTokenProvider;
 import com.cultegroup.localexperiences.utils.ValidatorUtils;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -44,24 +46,30 @@ public class AuthService {
         this.activateService = activateService;
     }
 
+    public ResponseEntity<?> isExist(EmailDTO email) {
+        if (userRepository.existsByEmail(email.getEmail())) {
+            return ResponseEntity.ok(HttpEntity.EMPTY);
+        }
+        return new ResponseEntity<>("Учётная запись не найдена.", HttpStatus.NOT_FOUND);
+    }
+
     public ResponseEntity<?> getAuthResponse(UserInfoDTO request) {
         try {
-            String identifier = request.getIdentifier();
-            manager.authenticate(new UsernamePasswordAuthenticationToken(identifier, request.getPassword()));
+            String email = request.getEmail();
+            manager.authenticate(new UsernamePasswordAuthenticationToken(email, request.getPassword()));
 
-            User user = validatorUtils.getUserByIdentifier(identifier);
+            User user = validatorUtils.getUserByEmail(email);
             if (user.getStatus().equals(Status.INACTIVE)) {
-                // TODO ADD ACTIVATION BY PHONE NUMBER
                 return new ResponseEntity<>("Аккаунт не активирован!", HttpStatus.UNAUTHORIZED);
             }
 
-            String accessToken = provider.createAccessToken(identifier, user.getId());
-            String refreshToken = provider.createRefreshToken(identifier, user.getId());
+            String accessToken = provider.createAccessToken(email, user.getId());
+            String refreshToken = provider.createRefreshToken(email, user.getId());
 
             refreshRepository.save(new RefreshToken(refreshToken, user));
 
             Map<Object, Object> response = new HashMap<>() {{
-                put("identifier", identifier);
+                put("email", email);
                 put("accessToken", accessToken);
                 put("refreshToken", refreshToken);
             }};
@@ -75,7 +83,7 @@ public class AuthService {
         String refreshToken = dto.getRefreshToken();
         if (provider.validateRefreshToken(refreshToken)) {
             String identifier = provider.getUsernameByRefreshToken(refreshToken);
-            User user = validatorUtils.getUserByIdentifier(identifier);
+            User user = validatorUtils.getUserByEmail(identifier);
             RefreshToken refresh = refreshRepository.findByUser(user).orElse(null);
 
             if (refresh != null && refresh.getToken().equals(refreshToken)) {
@@ -94,7 +102,7 @@ public class AuthService {
         if (refreshToken != null && dto.getAccessToken() != null
                 && provider.validateRefreshToken(refreshToken)) {
             String identifier = provider.getUsernameByRefreshToken(refreshToken);
-            User user = validatorUtils.getUserByIdentifier(identifier);
+            User user = validatorUtils.getUserByEmail(identifier);
             RefreshToken refresh = refreshRepository.findByUser(user).orElse(null);
 
             if (refresh != null && refresh.getToken().equals(refreshToken)) {
@@ -113,27 +121,12 @@ public class AuthService {
     }
 
     public ResponseEntity<?> register(UserInfoDTO request) {
-        String identifier = request.getIdentifier();
-        if (userRepository.existsByEmail(identifier)) {
-            return new ResponseEntity<>("Этот адрес электронной почты уже используется!",
-                    HttpStatus.BAD_REQUEST);
-        }
-
-        if (userRepository.existsByPhoneNumber(identifier)) {
-            return new ResponseEntity<>("Этот номер телефона уже используется!",
-                    HttpStatus.BAD_REQUEST);
-        }
-
-        User user;
         String password = encoder.encode(request.getPassword());
-        if (validatorUtils.isEmail(identifier)) {
-            user = new User(null, null, identifier, null, password);
-        } else {
-            user = new User(null, null, null, identifier, password);
-        }
+        User user = new User(null, null, request.getEmail(), null, password);
 
         userRepository.save(user);
         activateService.sendActivationMessage(user);
+
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 }
