@@ -32,7 +32,9 @@ public class ActivateService {
 
             User user = userRepository.findById(token.getUser().getId())
                     .orElseThrow(() -> new UsernameNotFoundException("Пользователя не существует"));
+
             user.setStatus(Status.ACTIVE);
+            verificationRepository.delete(token);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>("Ошибка верификации: " + e.getMessage(), HttpStatus.NOT_FOUND);
@@ -40,7 +42,6 @@ public class ActivateService {
     }
 
     public void sendActivationMessage(User user) {
-        // TODO ADD ACTIVATION BY PHONE NUMBER
         if (user.getEmail() != null && !user.getEmail().isEmpty()) {
             mailService.sendMail(user);
         }
