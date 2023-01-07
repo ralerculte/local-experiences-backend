@@ -1,10 +1,9 @@
 package com.cultegroup.localexperiences.services;
 
 import com.cultegroup.localexperiences.DTO.EmailDTO;
-import com.cultegroup.localexperiences.DTO.UserInfoDTO;
 import com.cultegroup.localexperiences.DTO.TokenDTO;
+import com.cultegroup.localexperiences.DTO.UserInfoDTO;
 import com.cultegroup.localexperiences.model.RefreshToken;
-import com.cultegroup.localexperiences.model.Status;
 import com.cultegroup.localexperiences.model.User;
 import com.cultegroup.localexperiences.repo.RefreshRepository;
 import com.cultegroup.localexperiences.repo.UserRepository;
@@ -53,26 +52,14 @@ public class AuthService {
         return new ResponseEntity<>("Учётная запись не найдена.", HttpStatus.NOT_FOUND);
     }
 
-    public ResponseEntity<?> getAuthResponse(UserInfoDTO request) {
+    public ResponseEntity<?> signIn(UserInfoDTO request) {
         try {
-            String email = request.getEmail();
+            String email = request.getEmail().toLowerCase();
             manager.authenticate(new UsernamePasswordAuthenticationToken(email, request.getPassword()));
 
             User user = validatorUtils.getUserByEmail(email);
-            if (user.getStatus().equals(Status.INACTIVE)) {
-                return new ResponseEntity<>("Аккаунт не активирован!", HttpStatus.UNAUTHORIZED);
-            }
 
-            String accessToken = provider.createAccessToken(email, user.getId());
-            String refreshToken = provider.createRefreshToken(email, user.getId());
-
-            refreshRepository.save(new RefreshToken(refreshToken, user));
-
-            Map<Object, Object> response = new HashMap<>() {{
-                put("email", email);
-                put("accessToken", accessToken);
-                put("refreshToken", refreshToken);
-            }};
+            Map<String, String> response = createTokens(user, email);
             return ResponseEntity.ok(response);
         } catch (AuthenticationException e) {
             return new ResponseEntity<>("Некорректные данные!", HttpStatus.FORBIDDEN);
@@ -101,32 +88,38 @@ public class AuthService {
         String refreshToken = dto.getRefreshToken();
         if (refreshToken != null && dto.getAccessToken() != null
                 && provider.validateRefreshToken(refreshToken)) {
-            String identifier = provider.getUsernameByRefreshToken(refreshToken);
-            User user = validatorUtils.getUserByEmail(identifier);
+            String email = provider.getUsernameByRefreshToken(refreshToken);
+            User user = validatorUtils.getUserByEmail(email);
             RefreshToken refresh = refreshRepository.findByUser(user).orElse(null);
 
             if (refresh != null && refresh.getToken().equals(refreshToken)) {
-                String access = provider.createAccessToken(identifier, user.getId());
-                String newRefresh = provider.createRefreshToken(identifier, user.getId());
-
-                refreshRepository.save(new RefreshToken(newRefresh, user));
-                Map<Object, Object> response = new HashMap<>() {{
-                    put("accessToken", access);
-                    put("refreshToken", newRefresh);
-                }};
+                Map<String, String> response = createTokens(user, email);
                 return ResponseEntity.ok(response);
             }
         }
         return new ResponseEntity<>("Невалидный refresh токен", HttpStatus.BAD_REQUEST);
     }
 
-    public ResponseEntity<?> register(UserInfoDTO request) {
+    public ResponseEntity<?> signUp(UserInfoDTO request) {
         String password = encoder.encode(request.getPassword());
-        User user = new User(null, null, request.getEmail(), null, password);
+        User user = new User(null, null, request.getEmail().toLowerCase(), null, password);
 
         userRepository.save(user);
         activateService.sendActivationMessage(user);
 
-        return new ResponseEntity<>(HttpStatus.CREATED);
+        Map<String, String> response = createTokens(user, request.getEmail());
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    private Map<String, String> createTokens(User user, String email) {
+        String accessToken = provider.createAccessToken(email, user.getId());
+        String refreshToken = provider.createRefreshToken(email, user.getId());
+
+        refreshRepository.save(new RefreshToken(refreshToken, user));
+        return new HashMap<>() {{
+            put("email", email);
+            put("accessToken", accessToken);
+            put("refreshToken", refreshToken);
+        }};
     }
 }
