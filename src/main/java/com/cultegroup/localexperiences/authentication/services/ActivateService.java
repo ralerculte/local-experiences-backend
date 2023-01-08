@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,7 +28,13 @@ public class ActivateService {
         try {
             VerificationToken token = verificationRepository.findByToken(dto.getToken())
                     .orElseThrow(() -> new InvalidActivationToken("Невалидный verification token"));
+
             User user = token.getUser();
+            if (token.getDateExpiration().isBefore(LocalDateTime.now())) {
+                verificationRepository.delete(token);
+                sendActivationMessage(user);
+                return new ResponseEntity<>("Истекло время действия ссылки", HttpStatus.GONE);
+            }
 
             user.setStatus(Status.ACTIVE);
             verificationRepository.delete(token);

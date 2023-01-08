@@ -3,8 +3,7 @@ package com.cultegroup.localexperiences.authentication.model;
 import com.cultegroup.localexperiences.shared.model.User;
 
 import javax.persistence.*;
-
-// TODO ADD EXPIRED DATE
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "verification_tokens")
@@ -14,18 +13,20 @@ public class VerificationToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String token;
+    @Column(name = "date_expiration")
+    private LocalDateTime dateExpiration;
 
     @OneToOne
     @JoinColumn(name = "user_id")
     private User user;
 
     public VerificationToken() {
-
     }
 
-    public VerificationToken(String token, User user) {
+    public VerificationToken(String token, User user, LocalDateTime dateExpiration) {
         this.token = token;
         this.user = user;
+        this.dateExpiration = dateExpiration;
     }
 
     public void setId(Long id) {
@@ -50,5 +51,13 @@ public class VerificationToken {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public LocalDateTime getDateExpiration() {
+        return dateExpiration;
+    }
+
+    public void setDateExpiration(LocalDateTime dateExpiration) {
+        this.dateExpiration = dateExpiration;
     }
 }

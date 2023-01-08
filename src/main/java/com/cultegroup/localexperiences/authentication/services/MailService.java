@@ -1,13 +1,14 @@
 package com.cultegroup.localexperiences.authentication.services;
 
-import com.cultegroup.localexperiences.shared.model.User;
 import com.cultegroup.localexperiences.authentication.model.VerificationToken;
 import com.cultegroup.localexperiences.authentication.repo.VerificationRepository;
+import com.cultegroup.localexperiences.shared.model.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -32,7 +33,8 @@ public class MailService {
                 + "http://localhost:4200/activate/" + token;
         String subject = "Активируй впечатления!";
 
-        verificationRepository.save(new VerificationToken(token, user));
+        LocalDateTime dateExpiration = LocalDateTime.now().plusDays(1L);
+        verificationRepository.save(new VerificationToken(token, user, dateExpiration));
 
         mailMessage.setFrom(username);
         mailMessage.setTo(user.getEmail());
