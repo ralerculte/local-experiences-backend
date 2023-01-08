@@ -46,7 +46,7 @@ public class AuthService {
     }
 
     public ResponseEntity<?> isExist(EmailDTO email) {
-        if (userRepository.existsByEmail(email.getEmail())) {
+        if (userRepository.existsByEmail(email.getEmail().toLowerCase())) {
             return ResponseEntity.ok(HttpEntity.EMPTY);
         }
         return new ResponseEntity<>("Учётная запись не найдена.", HttpStatus.NOT_FOUND);
