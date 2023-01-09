@@ -1,6 +1,7 @@
 package com.cultegroup.localexperiences.authentication.services;
 
 import com.cultegroup.localexperiences.authentication.DTO.ActivateDTO;
+import com.cultegroup.localexperiences.authentication.DTO.EmailDTO;
 import com.cultegroup.localexperiences.authentication.exceptions.InvalidActivationToken;
 import com.cultegroup.localexperiences.authentication.model.VerificationToken;
 import com.cultegroup.localexperiences.authentication.repo.VerificationRepository;
@@ -11,8 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
 public class ActivateService {
@@ -26,7 +25,7 @@ public class ActivateService {
 
     public ResponseEntity<?> activate(ActivateDTO dto) {
         try {
-            VerificationToken token = verificationRepository.findByToken(dto.getToken())
+            VerificationToken token = verificationRepository.findByToken(dto.token())
                     .orElseThrow(() -> new InvalidActivationToken("Невалидный verification token"));
 
             User user = token.getUser();
@@ -38,10 +37,8 @@ public class ActivateService {
 
             user.setStatus(Status.ACTIVE);
             verificationRepository.delete(token);
-            Map<String, String> response = new HashMap<>() {{
-                put("email", user.getEmail());
-            }};
-            return new ResponseEntity<>(response, HttpStatus.OK);
+
+            return new ResponseEntity<>(new EmailDTO(user.getEmail()), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>("Ошибка верификации: " + e.getMessage(), HttpStatus.NOT_FOUND);
         }

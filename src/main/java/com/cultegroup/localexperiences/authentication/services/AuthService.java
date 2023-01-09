@@ -1,7 +1,7 @@
 package com.cultegroup.localexperiences.authentication.services;
 
 import com.cultegroup.localexperiences.authentication.DTO.EmailDTO;
-import com.cultegroup.localexperiences.authentication.DTO.TokenDTO;
+import com.cultegroup.localexperiences.authentication.DTO.TokensDTO;
 import com.cultegroup.localexperiences.authentication.DTO.UserInfoDTO;
 import com.cultegroup.localexperiences.authentication.model.RefreshToken;
 import com.cultegroup.localexperiences.shared.model.User;
@@ -17,9 +17,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
 public class AuthService {
@@ -46,7 +43,7 @@ public class AuthService {
     }
 
     public ResponseEntity<?> isExist(EmailDTO email) {
-        if (userRepository.existsByEmail(email.getEmail().toLowerCase())) {
+        if (userRepository.existsByEmail(email.email().toLowerCase())) {
             return ResponseEntity.ok(HttpEntity.EMPTY);
         }
         return new ResponseEntity<>("Учётная запись не найдена.", HttpStatus.NOT_FOUND);
@@ -54,49 +51,58 @@ public class AuthService {
 
     public ResponseEntity<?> signIn(UserInfoDTO request) {
         try {
-            String email = request.getEmail().toLowerCase();
-            manager.authenticate(new UsernamePasswordAuthenticationToken(email, request.getPassword()));
+            String email = request.email().toLowerCase();
+            manager.authenticate(new UsernamePasswordAuthenticationToken(email, request.password()));
 
             User user = validatorUtils.getUserByEmail(email);
 
-            Map<String, String> response = createTokens(user, email);
+            TokensDTO response = createTokens(user, email);
             return ResponseEntity.ok(response);
         } catch (AuthenticationException e) {
             return new ResponseEntity<>("Некорректные данные!", HttpStatus.FORBIDDEN);
         }
     }
 
-    public ResponseEntity<?> updateAccessToken(TokenDTO dto) {
-        String refreshToken = dto.getRefreshToken();
+    public ResponseEntity<?> signUp(UserInfoDTO request) {
+        String password = encoder.encode(request.password());
+        User user = new User(null, null, request.email().toLowerCase(), null, password);
+
+        userRepository.save(user);
+        activateService.sendActivationMessage(user);
+
+        TokensDTO response = createTokens(user, request.email());
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    public ResponseEntity<?> updateAccessToken(TokensDTO dto) {
+        String refreshToken = dto.refreshToken();
         if (provider.validateRefreshToken(refreshToken)) {
             String email = provider.getUsernameByRefreshToken(refreshToken);
             User user = validatorUtils.getUserByEmail(email);
             RefreshToken refresh = refreshRepository.findByUser(user).orElse(null);
 
             if (refresh != null && refresh.getToken().equals(refreshToken)) {
-                String access = provider.createAccessToken(email, user.getId());
+                String accessToken = provider.createAccessToken(email, user.getId());
 
-                Map<Object, Object> response = new HashMap<>();
-                response.put("accessToken", access);
-                return ResponseEntity.ok(response);
+                return ResponseEntity.ok(new TokensDTO(email, accessToken, null));
             }
         }
         return new ResponseEntity<>("Невалидный refresh токен", HttpStatus.BAD_REQUEST);
     }
 
-    public ResponseEntity<?> refresh(TokenDTO dto) {
-        String refreshToken = dto.getRefreshToken();
-        if (refreshToken != null && dto.getAccessToken() != null
+    public ResponseEntity<?> refresh(TokensDTO dto) {
+        String refreshToken = dto.refreshToken();
+        if (refreshToken != null && dto.accessToken() != null
                 && provider.validateRefreshToken(refreshToken)) {
             String email = provider.getUsernameByRefreshToken(refreshToken);
             User user = validatorUtils.getUserByEmail(email);
             RefreshToken refresh = refreshRepository.findByUser(user).orElse(null);
 
             if (refresh != null && refresh.getToken().equals(refreshToken)) {
-                Map<String, String> response = createTokens(user, email);
+                TokensDTO response = createTokens(user, email);
 
                 refreshRepository.delete(refresh);
-                refreshRepository.save(new RefreshToken(response.get("refreshToken"), user));
+                refreshRepository.save(new RefreshToken(response.refreshToken(), user));
 
                 return ResponseEntity.ok(response);
             }
@@ -104,26 +110,11 @@ public class AuthService {
         return new ResponseEntity<>("Невалидный refresh токен", HttpStatus.BAD_REQUEST);
     }
 
-    public ResponseEntity<?> signUp(UserInfoDTO request) {
-        String password = encoder.encode(request.getPassword());
-        User user = new User(null, null, request.getEmail().toLowerCase(), null, password);
-
-        userRepository.save(user);
-        activateService.sendActivationMessage(user);
-
-        Map<String, String> response = createTokens(user, request.getEmail());
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
-    }
-
-    private Map<String, String> createTokens(User user, String email) {
+    private TokensDTO createTokens(User user, String email) {
         String accessToken = provider.createAccessToken(email, user.getId());
         String refreshToken = provider.createRefreshToken(email, user.getId());
 
         refreshRepository.save(new RefreshToken(refreshToken, user));
-        return new HashMap<>() {{
-            put("email", email);
-            put("accessToken", accessToken);
-            put("refreshToken", refreshToken);
-        }};
+        return new TokensDTO(email, accessToken, refreshToken);
     }
 }

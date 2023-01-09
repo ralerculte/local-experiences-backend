@@ -1,8 +1,8 @@
 package com.cultegroup.localexperiences.authentication.rest;
 
 import com.cultegroup.localexperiences.authentication.DTO.EmailDTO;
+import com.cultegroup.localexperiences.authentication.DTO.TokensDTO;
 import com.cultegroup.localexperiences.authentication.DTO.UserInfoDTO;
-import com.cultegroup.localexperiences.authentication.DTO.TokenDTO;
 import com.cultegroup.localexperiences.authentication.services.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -42,7 +42,7 @@ public class AuthControllerV1 {
     public ResponseEntity<?> isExist(
             @Parameter(description = "DTO, содержащее адрес электронной почты.")
             @RequestBody EmailDTO email) {
-        System.out.println(email.getEmail());
+        System.out.println(email.email());
         return service.isExist(email);
     }
 
@@ -81,7 +81,7 @@ public class AuthControllerV1 {
     })
     public ResponseEntity<?> update(
             @Parameter(description = "DTO, содержащее в себе токены.")
-            @RequestBody TokenDTO dto) {
+            @RequestBody TokensDTO dto) {
         return service.updateAccessToken(dto);
     }
 
@@ -94,7 +94,7 @@ public class AuthControllerV1 {
     })
     public ResponseEntity<?> refresh(
             @Parameter(description = "DTO, содержащее в себе токены.")
-            @RequestBody TokenDTO dto) {
+            @RequestBody TokensDTO dto) {
         return service.refresh(dto);
     }
 
