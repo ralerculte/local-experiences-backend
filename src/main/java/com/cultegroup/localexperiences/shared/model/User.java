@@ -6,24 +6,21 @@ import javax.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
 
-// TODO ADD TO USER CASCADE DELETE
 @Entity
-@Table(name = "users")
+@Table(name = "usersV2")
 public class User {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String name;
-    private String surname;
     private String email;
-    @Column(name = "phone_number")
-    private String phoneNumber;
-    @Enumerated
-    private Status status;
-
     @JsonIgnore
     private String password;
+    private String name;
+    private String surname;
+    @Column(name = "avatar_link")
+    private String avatarLink;
+    @Enumerated
+    private Status status;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Experience> experiences = new HashSet<>();
@@ -33,32 +30,29 @@ public class User {
     public User() {
     }
 
-    public User(String name,
-                String surname,
-                String email,
-                String phoneNumber,
-                Status status,
-                String password,
-                Set<Experience> experiences,
-                Set<Event> events) {
-        this.name = name;
-        this.surname = surname;
+    public User(String email, String password) {
         this.email = email;
-        this.phoneNumber = phoneNumber;
-        this.status = status;
         this.password = password;
-        this.experiences = experiences;
-        this.events = events;
     }
 
-    public User(String name, String surname, String email, String phoneNumber, String password) {
+    public User(
+            String email,
+            String password,
+            String name,
+            String surname,
+            String avatarLink,
+            Status status,
+            Set<Experience> experiences,
+            Set<Event> events
+    ) {
+        this.email = email;
+        this.password = password;
         this.name = name;
         this.surname = surname;
-        this.email = email;
-        this.phoneNumber = phoneNumber;
-        this.password = password;
-
-        this.status = Status.INACTIVE;
+        this.avatarLink = avatarLink;
+        this.status = status;
+        this.experiences = experiences;
+        this.events = events;
     }
 
     public Long getId() {
@@ -67,6 +61,22 @@ public class User {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public String getName() {
@@ -85,20 +95,12 @@ public class User {
         this.surname = surname;
     }
 
-    public String getEmail() {
-        return email;
+    public String getAvatarLink() {
+        return avatarLink;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPhoneNumber() {
-        return phoneNumber;
-    }
-
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
+    public void setAvatarLink(String avatarLink) {
+        this.avatarLink = avatarLink;
     }
 
     public Status getStatus() {
@@ -107,14 +109,6 @@ public class User {
 
     public void setStatus(Status status) {
         this.status = status;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public Set<Experience> getExperiences() {

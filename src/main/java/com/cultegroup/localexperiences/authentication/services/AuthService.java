@@ -4,11 +4,11 @@ import com.cultegroup.localexperiences.authentication.DTO.EmailDTO;
 import com.cultegroup.localexperiences.authentication.DTO.TokensDTO;
 import com.cultegroup.localexperiences.authentication.DTO.UserInfoDTO;
 import com.cultegroup.localexperiences.authentication.model.RefreshToken;
-import com.cultegroup.localexperiences.shared.model.User;
 import com.cultegroup.localexperiences.authentication.repo.RefreshRepository;
 import com.cultegroup.localexperiences.authentication.repo.UserRepository;
 import com.cultegroup.localexperiences.authentication.security.JwtTokenProvider;
 import com.cultegroup.localexperiences.authentication.utils.ValidatorUtils;
+import com.cultegroup.localexperiences.shared.model.User;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -65,7 +65,7 @@ public class AuthService {
 
     public ResponseEntity<?> signUp(UserInfoDTO request) {
         String password = encoder.encode(request.password());
-        User user = new User(null, null, request.email().toLowerCase(), null, password);
+        User user = new User(request.email().toLowerCase(), password);
 
         userRepository.save(user);
         activateService.sendActivationMessage(user);

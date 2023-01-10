@@ -1,7 +1,7 @@
 package com.cultegroup.localexperiences.authentication.utils;
 
-import com.cultegroup.localexperiences.shared.model.User;
 import com.cultegroup.localexperiences.authentication.repo.UserRepository;
+import com.cultegroup.localexperiences.shared.model.User;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 

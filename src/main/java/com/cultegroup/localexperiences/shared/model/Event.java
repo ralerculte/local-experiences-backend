@@ -1,19 +1,18 @@
 package com.cultegroup.localexperiences.shared.model;
 
 import javax.persistence.*;
-import java.time.LocalDate;
 
 @Entity
-@Table(name = "events")
+@Table(name = "eventsV2")
 public class Event {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(name = "local_rating")
-    private Integer localRating;
-    private LocalDate date;
+    private Integer rating;
+    private String feedback;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @ManyToOne
     @JoinColumn(name = "experience_id")
     private Experience experience;
     @ManyToOne
@@ -23,34 +22,35 @@ public class Event {
     public Event() {
     }
 
-    public Event(Integer localRating, LocalDate date, Experience experience) {
-        this.localRating = localRating;
-        this.date = date;
+    public Event(Integer rating, String feedback, Experience experience, User user) {
+        this.rating = rating;
+        this.feedback = feedback;
         this.experience = experience;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
+        this.user = user;
     }
 
     public Long getId() {
         return id;
     }
 
-    public Integer getLocalRating() {
-        return localRating;
+    public void setId(Long id) {
+        this.id = id;
     }
 
-    public void setLocalRating(Integer localRating) {
-        this.localRating = localRating;
+    public Integer getRating() {
+        return rating;
     }
 
-    public LocalDate getDate() {
-        return date;
+    public void setRating(Integer rating) {
+        this.rating = rating;
     }
 
-    public void setDate(LocalDate date) {
-        this.date = date;
+    public String getFeedback() {
+        return feedback;
+    }
+
+    public void setFeedback(String feedback) {
+        this.feedback = feedback;
     }
 
     public Experience getExperience() {
