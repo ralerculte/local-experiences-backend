@@ -3,6 +3,7 @@ package com.cultegroup.localexperiences.authentication.services;
 import com.cultegroup.localexperiences.authentication.DTO.EmailDTO;
 import com.cultegroup.localexperiences.authentication.DTO.TokensDTO;
 import com.cultegroup.localexperiences.authentication.DTO.UserInfoDTO;
+import com.cultegroup.localexperiences.authentication.exceptions.InvalidEmailException;
 import com.cultegroup.localexperiences.authentication.model.RefreshToken;
 import com.cultegroup.localexperiences.authentication.repo.RefreshRepository;
 import com.cultegroup.localexperiences.authentication.repo.UserRepository;
@@ -18,8 +19,14 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 @Service
 public class AuthService {
+
+    private final static Pattern VALID_EMAIL_ADDRESS_REGEX =
+            Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
 
     private final AuthenticationManager manager;
     private final UserRepository userRepository;
@@ -51,6 +58,8 @@ public class AuthService {
 
     public ResponseEntity<?> signIn(UserInfoDTO request) {
         try {
+            validateUserInfo(request);
+
             String email = request.email().toLowerCase();
             manager.authenticate(new UsernamePasswordAuthenticationToken(email, request.password()));
 
@@ -59,19 +68,25 @@ public class AuthService {
             TokensDTO response = createTokens(user, email);
             return ResponseEntity.ok(response);
         } catch (AuthenticationException e) {
-            return new ResponseEntity<>("Некорректные данные!", HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.FORBIDDEN);
         }
     }
 
     public ResponseEntity<?> signUp(UserInfoDTO request) {
-        String password = encoder.encode(request.password());
-        User user = new User(request.email().toLowerCase(), password);
+        try {
+            validateUserInfo(request);
 
-        userRepository.save(user);
-        activateService.sendActivationMessage(user);
+            String password = encoder.encode(request.password());
+            User user = new User(request.email().toLowerCase(), password);
 
-        TokensDTO response = createTokens(user, request.email());
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+            userRepository.save(user);
+            activateService.sendActivationMessage(user);
+
+            TokensDTO response = createTokens(user, request.email());
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
+        } catch (InvalidEmailException e) {
+            return new ResponseEntity<>(e.getMessage(), e.getHttpStatus());
+        }
     }
 
     public ResponseEntity<?> updateAccessToken(TokensDTO dto) {
@@ -108,6 +123,13 @@ public class AuthService {
             }
         }
         return new ResponseEntity<>("Невалидный refresh токен", HttpStatus.BAD_REQUEST);
+    }
+
+    private static void validateUserInfo(UserInfoDTO request) {
+        Matcher matcher = VALID_EMAIL_ADDRESS_REGEX.matcher(request.email());
+        if (!matcher.find()) {
+            throw new InvalidEmailException("Невалидный адрес электронной почты.", HttpStatus.BAD_REQUEST);
+        }
     }
 
     private TokensDTO createTokens(User user, String email) {
