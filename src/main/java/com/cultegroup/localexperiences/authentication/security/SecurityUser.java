@@ -1,11 +1,12 @@
 package com.cultegroup.localexperiences.authentication.security;
 
+import com.cultegroup.localexperiences.shared.model.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 
-public record SecurityUser(String email, String password) implements UserDetails {
+public record SecurityUser(User user) implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -13,13 +14,13 @@ public record SecurityUser(String email, String password) implements UserDetails
     }
 
     @Override
-    public String getPassword() {
-        return password;
+    public String getUsername() {
+        return user.getEmail();
     }
 
     @Override
-    public String getUsername() {
-        return email;
+    public String getPassword() {
+        return user.getPassword();
     }
 
     @Override
@@ -45,7 +46,7 @@ public record SecurityUser(String email, String password) implements UserDetails
     @Override
     public String toString() {
         return getClass().getName() + " [" +
-                "Email=" + email() + ", " +
+                "Email=" + user.getEmail() + ", " +
                 "Password=[PROTECTED]" + "]";
     }
 }

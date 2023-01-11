@@ -18,9 +18,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = validatorUtils.getUserByEmail(email);
-        return new SecurityUser(
-                user.getEmail(),
-                user.getPassword()
-        );
+        return new SecurityUser(user);
     }
 }
