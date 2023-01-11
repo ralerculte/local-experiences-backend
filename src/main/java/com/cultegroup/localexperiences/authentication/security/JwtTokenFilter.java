@@ -37,7 +37,7 @@ public class JwtTokenFilter extends GenericFilterBean {
         } catch (JwtAuthenticationException e) {
             SecurityContextHolder.clearContext();
             ((HttpServletResponse) response).sendError(e.getHttpStatus().value());
-            throw new JwtAuthenticationException("Невалидный JWT token");
+            return;
         }
         chain.doFilter(request, response);
     }
