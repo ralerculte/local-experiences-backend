@@ -1,4 +1,4 @@
-package com.cultegroup.localexperiences.authentication.config;
+package com.cultegroup.localexperiences.mail.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

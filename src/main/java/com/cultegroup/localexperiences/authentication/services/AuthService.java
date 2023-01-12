@@ -6,10 +6,11 @@ import com.cultegroup.localexperiences.authentication.DTO.UserInfoDTO;
 import com.cultegroup.localexperiences.authentication.exceptions.InvalidEmailException;
 import com.cultegroup.localexperiences.authentication.model.RefreshToken;
 import com.cultegroup.localexperiences.authentication.repo.RefreshRepository;
-import com.cultegroup.localexperiences.authentication.repo.UserRepository;
+import com.cultegroup.localexperiences.shared.exceptions.HttpStatusException;
+import com.cultegroup.localexperiences.data.repo.UserRepository;
 import com.cultegroup.localexperiences.authentication.security.JwtTokenProvider;
 import com.cultegroup.localexperiences.authentication.utils.ValidatorUtils;
-import com.cultegroup.localexperiences.shared.model.User;
+import com.cultegroup.localexperiences.data.model.User;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -84,8 +85,8 @@ public class AuthService {
 
             TokensDTO response = createTokens(user, request.email());
             return new ResponseEntity<>(response, HttpStatus.CREATED);
-        } catch (InvalidEmailException e) {
-            return new ResponseEntity<>(e.getMessage(), e.getHttpStatus());
+        } catch (HttpStatusException e) {
+            return new ResponseEntity<>(e.getMessage(), e.getStatus());
         }
     }
 
@@ -99,7 +100,7 @@ public class AuthService {
             if (refresh != null && refresh.getToken().equals(refreshToken)) {
                 String accessToken = provider.createAccessToken(email, user.getId());
 
-                return ResponseEntity.ok(new TokensDTO(email, accessToken, null));
+                return ResponseEntity.ok(new TokensDTO(user.getId(), accessToken, null));
             }
         }
         return new ResponseEntity<>("Невалидный refresh токен", HttpStatus.BAD_REQUEST);
@@ -137,6 +138,6 @@ public class AuthService {
         String refreshToken = provider.createRefreshToken(email, user.getId());
 
         refreshRepository.save(new RefreshToken(refreshToken, user));
-        return new TokensDTO(email, accessToken, refreshToken);
+        return new TokensDTO(user.getId(), accessToken, refreshToken);
     }
 }

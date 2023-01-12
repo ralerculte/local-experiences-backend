@@ -1,4 +1,4 @@
-package com.cultegroup.localexperiences.shared.model;
+package com.cultegroup.localexperiences.data.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -17,6 +17,7 @@ public class User {
     private String password;
     private String name;
     private String surname;
+    private String location;
     @Column(name = "avatar_link")
     private String avatarLink;
     @Enumerated
@@ -41,6 +42,7 @@ public class User {
             String name,
             String surname,
             String avatarLink,
+            String location,
             Status status,
             Set<Experience> experiences,
             Set<Event> events
@@ -50,6 +52,7 @@ public class User {
         this.name = name;
         this.surname = surname;
         this.avatarLink = avatarLink;
+        this.location = location;
         this.status = status;
         this.experiences = experiences;
         this.events = events;
@@ -101,6 +104,14 @@ public class User {
 
     public void setAvatarLink(String avatarLink) {
         this.avatarLink = avatarLink;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
     }
 
     public Status getStatus() {

@@ -1,17 +1,11 @@
 package com.cultegroup.localexperiences.authentication.exceptions;
 
+import com.cultegroup.localexperiences.shared.exceptions.HttpStatusException;
 import org.springframework.http.HttpStatus;
 
-public class InvalidEmailException extends RuntimeException {
+public class InvalidEmailException extends HttpStatusException {
 
-    private final HttpStatus httpStatus;
-
-    public InvalidEmailException(String msg, HttpStatus httpStatus) {
-        super(msg);
-        this.httpStatus = httpStatus;
-    }
-
-    public HttpStatus getHttpStatus() {
-        return httpStatus;
+    public InvalidEmailException(String message, HttpStatus status) {
+        super(message, status);
     }
 }

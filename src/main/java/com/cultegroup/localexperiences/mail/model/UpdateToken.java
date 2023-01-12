@@ -1,13 +1,13 @@
-package com.cultegroup.localexperiences.authentication.model;
+package com.cultegroup.localexperiences.mail.model;
 
-import com.cultegroup.localexperiences.shared.model.User;
+import com.cultegroup.localexperiences.data.model.User;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "verification_tokens")
-public class VerificationToken {
+@Table(name = "update_token")
+public class UpdateToken {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,10 +20,10 @@ public class VerificationToken {
     @JoinColumn(name = "user_id")
     private User user;
 
-    public VerificationToken() {
+    public UpdateToken() {
     }
 
-    public VerificationToken(String token, User user, LocalDateTime dateExpiration) {
+    public UpdateToken(String token, User user, LocalDateTime dateExpiration) {
         this.token = token;
         this.user = user;
         this.dateExpiration = dateExpiration;

@@ -1,6 +1,6 @@
 package com.cultegroup.localexperiences.authentication.security;
 
-import com.cultegroup.localexperiences.shared.model.User;
+import com.cultegroup.localexperiences.data.model.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 

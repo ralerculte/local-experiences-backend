@@ -1,4 +1,7 @@
-package com.cultegroup.localexperiences.shared.model;
+package com.cultegroup.localexperiences.data.model;
+
+import com.cultegroup.localexperiences.data.utils.IdSerializer;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import javax.persistence.*;
 
@@ -14,9 +17,11 @@ public class Event {
 
     @ManyToOne
     @JoinColumn(name = "experience_id")
+    @JsonSerialize(using = IdSerializer.class)
     private Experience experience;
     @ManyToOne
     @JoinColumn(name = "user_id")
+    @JsonSerialize(using = IdSerializer.class)
     private User user;
 
     public Event() {

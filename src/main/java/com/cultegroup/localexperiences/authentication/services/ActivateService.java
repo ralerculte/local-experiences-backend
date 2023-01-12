@@ -3,10 +3,11 @@ package com.cultegroup.localexperiences.authentication.services;
 import com.cultegroup.localexperiences.authentication.DTO.ActivateDTO;
 import com.cultegroup.localexperiences.authentication.DTO.EmailDTO;
 import com.cultegroup.localexperiences.authentication.exceptions.InvalidActivationToken;
-import com.cultegroup.localexperiences.authentication.model.VerificationToken;
-import com.cultegroup.localexperiences.authentication.repo.VerificationRepository;
-import com.cultegroup.localexperiences.shared.model.Status;
-import com.cultegroup.localexperiences.shared.model.User;
+import com.cultegroup.localexperiences.mail.model.VerificationToken;
+import com.cultegroup.localexperiences.mail.repo.VerificationRepository;
+import com.cultegroup.localexperiences.data.model.Status;
+import com.cultegroup.localexperiences.data.model.User;
+import com.cultegroup.localexperiences.mail.services.MailService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -46,7 +47,7 @@ public class ActivateService {
 
     public void sendActivationMessage(User user) {
         if (user.getEmail() != null && !user.getEmail().isEmpty()) {
-            mailService.sendMail(user);
+            mailService.sendVerificationMessage(user);
         }
     }
 

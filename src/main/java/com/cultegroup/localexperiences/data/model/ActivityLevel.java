@@ -1,4 +1,4 @@
-package com.cultegroup.localexperiences.shared.model;
+package com.cultegroup.localexperiences.data.model;
 
 public enum ActivityLevel {
     LIGHT,

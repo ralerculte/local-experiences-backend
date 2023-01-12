@@ -1,6 +1,6 @@
-package com.cultegroup.localexperiences.authentication.repo;
+package com.cultegroup.localexperiences.data.repo;
 
-import com.cultegroup.localexperiences.shared.model.User;
+import com.cultegroup.localexperiences.data.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

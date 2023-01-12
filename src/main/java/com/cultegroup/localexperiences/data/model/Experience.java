@@ -1,6 +1,10 @@
-package com.cultegroup.localexperiences.shared.model;
+package com.cultegroup.localexperiences.data.model;
 
+import com.cultegroup.localexperiences.data.utils.IdSerializer;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.hypersistence.utils.hibernate.type.array.ListArrayType;
 import org.hibernate.annotations.Type;
+import org.hibernate.annotations.TypeDef;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -11,6 +15,7 @@ import java.util.Set;
 
 @Entity
 @Table(name = "experiencesV2")
+@TypeDef(name = "list-array", typeClass = ListArrayType.class)
 public class Experience {
 
     @Id
@@ -52,6 +57,7 @@ public class Experience {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
+    @JsonSerialize(using = IdSerializer.class)
     private User user;
     @OneToMany(mappedBy = "experience")
     private Set<Event> events = new HashSet<>();
@@ -219,7 +225,7 @@ public class Experience {
         return feedback;
     }
 
-    public double getAverageRating() {
+    public double getRating() {
         int sum = 0;
         int count = 0;
         for (Event event : events) {
