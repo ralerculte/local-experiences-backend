@@ -38,11 +38,11 @@ public class UserControllerV1 {
     }
 
     @PostMapping("/{id}/file")
-    public ResponseEntity<?> uploadFile(
+    public ResponseEntity<?> uploadProfileImage(
             @PathVariable Long id,
-            @RequestPart MultipartFile file
+            @RequestPart MultipartFile profileImage
     ) {
-        return null;
+        return service.uploadProfileImage(id, profileImage);
     }
 
     @PostMapping("/{id}/password")
@@ -67,6 +67,11 @@ public class UserControllerV1 {
             @RequestBody UpdatePasswordDTO dto
     ) {
         return service.updatePassword(id, dto);
+    }
+
+    @DeleteMapping("/{id}/file")
+    public ResponseEntity<?> deleteProfileImage(@PathVariable Long id) {
+        return service.deleteProfileImage(id);
     }
 
     @DeleteMapping("/{id}")
