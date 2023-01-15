@@ -1,5 +1,10 @@
 package com.cultegroup.findguide.data.model;
 
+import com.cultegroup.findguide.data.model.enums.Duration;
+import com.cultegroup.findguide.data.model.enums.ExperienceType;
+import com.cultegroup.findguide.data.model.enums.Language;
+import com.cultegroup.findguide.data.model.location.Location;
+import com.cultegroup.findguide.data.utils.EntityId;
 import com.cultegroup.findguide.data.utils.IdSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.hypersistence.utils.hibernate.type.array.ListArrayType;
@@ -7,35 +12,25 @@ import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 @Entity
-@Table(name = "experiencesV2")
+@Table(name = "experiencesV3")
 @TypeDef(name = "list-array", typeClass = ListArrayType.class)
-public class Experience {
-
+public class Experience implements EntityId {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String title;
     private String description;
-    private String location;
-    @Column(name = "min_age")
-    private Integer minAge;
-    @Column(name = "max_quantity")
-    private Integer maxQuantity;
     @Enumerated
-    @Column(name = "activity_level")
-    private ActivityLevel activityLevel;
-    @Enumerated
-    private Category category;
+    @Column(name = "experience_type")
+    private ExperienceType experienceType;
     @Enumerated
     private Duration duration;
-
     @Type(type = "list-array")
     @Column(
             name = "media_links",
@@ -44,23 +39,49 @@ public class Experience {
     private List<String> mediaLinks;
     @Type(type = "list-array")
     @Column(
-            name = "inventory",
+            name = "client_inventory",
             columnDefinition = "text[]"
     )
-    private List<String> inventory;
-    @Type(type = "list-array")
-    @Column(
-            name = "dates_start",
-            columnDefinition = "timestamp[]"
+    private List<String> clientInventory;
+    @Type(
+            type = "io.hypersistence.utils.hibernate.type.array.ListArrayType",
+            parameters = {
+                    @org.hibernate.annotations.Parameter(
+                            name = ListArrayType.SQL_ARRAY_TYPE,
+                            value = "sensor_state"
+                    )
+            }
     )
-    private List<LocalDateTime> datesStart;
+    @Column(
+            name = "languages",
+            columnDefinition = "language[]"
+    )
+    private List<Language> languages;
+
+
+    @OneToOne(mappedBy = "experience")
+    private GuideInfo guideInfo;
+    @OneToOne(mappedBy = "experience")
+    private Included included;
+    @OneToOne(mappedBy = "experience")
+    private Restriction restriction;
+    @OneToOne(mappedBy = "experience")
+    private Payment payment;
+
+    @OneToMany(mappedBy = "experience")
+    private Set<Event> events = new HashSet<>();
+    @OneToMany(mappedBy = "experience")
+    private Set<ScheduledEvent> scheduledEvent = new HashSet<>();
+
 
     @ManyToOne
     @JoinColumn(name = "user_id")
     @JsonSerialize(using = IdSerializer.class)
     private User user;
-    @OneToMany(mappedBy = "experience")
-    private Set<Event> events = new HashSet<>();
+    @ManyToOne
+    @JoinColumn(name = "location_id")
+    @JsonSerialize(using = IdSerializer.class)
+    private Location location;
 
     public Experience() {
     }
@@ -68,33 +89,38 @@ public class Experience {
     public Experience(
             String title,
             String description,
-            String location,
-            Integer minAge,
-            Integer maxQuantity,
-            ActivityLevel activityLevel,
-            Category category,
+            ExperienceType experienceType,
             Duration duration,
             List<String> mediaLinks,
-            List<String> inventory,
-            List<LocalDateTime> datesStart,
+            List<String> clientInventory,
+            List<Language> languages,
+            GuideInfo guideInfo,
+            Included included,
+            Restriction restriction,
+            Payment payment,
+            Set<Event> events,
+            Set<ScheduledEvent> scheduledEvent,
             User user,
-            Set<Event> events
+            Location location
     ) {
         this.title = title;
         this.description = description;
-        this.location = location;
-        this.minAge = minAge;
-        this.maxQuantity = maxQuantity;
-        this.activityLevel = activityLevel;
-        this.category = category;
+        this.experienceType = experienceType;
         this.duration = duration;
         this.mediaLinks = mediaLinks;
-        this.inventory = inventory;
-        this.datesStart = datesStart;
-        this.user = user;
+        this.clientInventory = clientInventory;
+        this.languages = languages;
+        this.guideInfo = guideInfo;
+        this.included = included;
+        this.restriction = restriction;
+        this.payment = payment;
         this.events = events;
+        this.scheduledEvent = scheduledEvent;
+        this.user = user;
+        this.location = location;
     }
 
+    @Override
     public Long getId() {
         return id;
     }
@@ -119,48 +145,12 @@ public class Experience {
         this.description = description;
     }
 
-    public String getLocation() {
-        return location;
+    public ExperienceType getExperienceType() {
+        return experienceType;
     }
 
-    public void setLocation(String location) {
-        this.location = location;
-    }
-
-    public Integer getMinAge() {
-        return minAge;
-    }
-
-    public void setMinAge(Integer minAge) {
-        this.minAge = minAge;
-    }
-
-    public Integer getMaxQuantity() {
-        return maxQuantity;
-    }
-
-    public void setMaxQuantity(Integer maxQuantity) {
-        this.maxQuantity = maxQuantity;
-    }
-
-    public List<String> getMediaLinks() {
-        return mediaLinks;
-    }
-
-    public ActivityLevel getActivityLevel() {
-        return activityLevel;
-    }
-
-    public void setActivityLevel(ActivityLevel activityLevel) {
-        this.activityLevel = activityLevel;
-    }
-
-    public Category getCategory() {
-        return category;
-    }
-
-    public void setCategory(Category category) {
-        this.category = category;
+    public void setExperienceType(ExperienceType experienceType) {
+        this.experienceType = experienceType;
     }
 
     public Duration getDuration() {
@@ -171,32 +161,60 @@ public class Experience {
         this.duration = duration;
     }
 
+    public List<String> getMediaLinks() {
+        return mediaLinks;
+    }
+
     public void setMediaLinks(List<String> mediaLinks) {
         this.mediaLinks = mediaLinks;
     }
 
-    public List<String> getInventory() {
-        return inventory;
+    public List<String> getClientInventory() {
+        return clientInventory;
     }
 
-    public void setInventory(List<String> inventory) {
-        this.inventory = inventory;
+    public void setClientInventory(List<String> clientInventory) {
+        this.clientInventory = clientInventory;
     }
 
-    public List<LocalDateTime> getDatesStart() {
-        return datesStart;
+    public List<Language> getLanguages() {
+        return languages;
     }
 
-    public void setDatesStart(List<LocalDateTime> datesStart) {
-        this.datesStart = datesStart;
+    public void setLanguages(List<Language> languages) {
+        this.languages = languages;
     }
 
-    public User getUser() {
-        return user;
+    public GuideInfo getGuideInfo() {
+        return guideInfo;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public void setGuideInfo(GuideInfo guideInfo) {
+        this.guideInfo = guideInfo;
+    }
+
+    public Included getIncluded() {
+        return included;
+    }
+
+    public void setIncluded(Included included) {
+        this.included = included;
+    }
+
+    public Restriction getRestriction() {
+        return restriction;
+    }
+
+    public void setRestriction(Restriction restriction) {
+        this.restriction = restriction;
+    }
+
+    public Payment getPayment() {
+        return payment;
+    }
+
+    public void setPayment(Payment payment) {
+        this.payment = payment;
     }
 
     public Set<Event> getEvents() {
@@ -207,12 +225,28 @@ public class Experience {
         this.events = events;
     }
 
-    public void addEvent(Event event) {
-        if (events == null) {
-            events = new HashSet<>();
-        }
-        event.setExperience(this);
-        events.add(event);
+    public Set<ScheduledEvent> getScheduledEvent() {
+        return scheduledEvent;
+    }
+
+    public void setScheduledEvent(Set<ScheduledEvent> scheduledEvent) {
+        this.scheduledEvent = scheduledEvent;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public Location getLocation() {
+        return location;
+    }
+
+    public void setLocation(Location location) {
+        this.location = location;
     }
 
     public List<String> getFeedback() {

@@ -1,19 +1,19 @@
 package com.cultegroup.findguide.data.model.location;
 
-import com.cultegroup.findguide.data.utils.IdParent;
+import com.cultegroup.findguide.data.utils.EntityId;
 
 import javax.persistence.*;
 import java.util.List;
 
 @Entity
 @Table(name = "countries")
-public class Country implements IdParent {
+public class Country implements EntityId {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(name = "cointry_name")
+    @Column(name = "country_name")
     private String countryName;
-    @Column(name = "cointry_initials")
+    @Column(name = "country_initials")
     private String countryInitials;
 
     @OneToMany(mappedBy = "country", cascade = CascadeType.ALL, orphanRemoval = true)

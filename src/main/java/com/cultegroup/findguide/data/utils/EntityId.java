@@ -1,5 +1,5 @@
 package com.cultegroup.findguide.data.utils;
 
-public interface IdParent {
+public interface EntityId {
     Long getId();
 }

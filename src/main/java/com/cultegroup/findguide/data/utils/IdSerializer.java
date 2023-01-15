@@ -10,7 +10,7 @@ public class IdSerializer extends JsonSerializer<Object> {
     @Override
     public void serialize(Object value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
         try {
-            String id = ((IdParent) value).getId() + "";
+            String id = ((EntityId) value).getId() + "";
             gen.writeString(id);
         } catch (Exception e) {
             throw new RuntimeException("Некорректное использование @JsonSerialize");

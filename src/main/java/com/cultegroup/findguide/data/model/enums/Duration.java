@@ -1,4 +1,4 @@
-package com.cultegroup.findguide.data.model;
+package com.cultegroup.findguide.data.model.enums;
 
 public enum Duration {
     ONE(60),

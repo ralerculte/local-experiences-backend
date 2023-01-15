@@ -1,6 +1,6 @@
 package com.cultegroup.findguide.data.model.location;
 
-import com.cultegroup.findguide.data.utils.IdParent;
+import com.cultegroup.findguide.data.utils.EntityId;
 import com.cultegroup.findguide.data.utils.IdSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
@@ -9,7 +9,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "cities")
-public class City implements IdParent {
+public class City implements EntityId {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
