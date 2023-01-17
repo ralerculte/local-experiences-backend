@@ -1,5 +1,7 @@
 package com.cultegroup.findguide.data.model;
 
+import com.cultegroup.findguide.data.model.enums.Status;
+import com.cultegroup.findguide.data.utils.EntityId;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
@@ -8,7 +10,7 @@ import java.util.Set;
 
 @Entity
 @Table(name = "usersV2")
-public class User {
+public class User implements EntityId {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

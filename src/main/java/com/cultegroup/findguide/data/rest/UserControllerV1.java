@@ -53,7 +53,7 @@ public class UserControllerV1 {
         return service.sendUpdateMessage(id, dto);
     }
 
-    @PatchMapping("/{id}")
+    @PatchMapping("/{id}/edit")
     public ResponseEntity<?> updateUser(
             @PathVariable Long id,
             @RequestBody Map<String, String> fields

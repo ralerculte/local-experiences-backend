@@ -5,7 +5,7 @@ import com.cultegroup.findguide.authentication.DTO.EmailDTO;
 import com.cultegroup.findguide.authentication.exceptions.InvalidActivationToken;
 import com.cultegroup.findguide.mail.model.VerificationToken;
 import com.cultegroup.findguide.mail.repo.VerificationRepository;
-import com.cultegroup.findguide.data.model.Status;
+import com.cultegroup.findguide.data.model.enums.Status;
 import com.cultegroup.findguide.data.model.User;
 import com.cultegroup.findguide.mail.services.MailService;
 import org.springframework.http.HttpStatus;
