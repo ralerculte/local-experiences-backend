@@ -26,6 +26,8 @@ public class Experience implements EntityId {
     private Long id;
     private String title;
     private String description;
+    @Column(name = "is_approved")
+    private Boolean isApproved;
     @Enumerated
     @Column(name = "experience_type")
     private ExperienceType experienceType;
@@ -59,18 +61,18 @@ public class Experience implements EntityId {
     private List<Language> languages;
 
 
-    @OneToOne(mappedBy = "experience")
+    @OneToOne(mappedBy = "experience", cascade = CascadeType.ALL)
     private GuideInfo guideInfo;
-    @OneToOne(mappedBy = "experience")
+    @OneToOne(mappedBy = "experience", cascade = CascadeType.ALL)
     private Included included;
-    @OneToOne(mappedBy = "experience")
+    @OneToOne(mappedBy = "experience", cascade = CascadeType.ALL)
     private Restriction restriction;
-    @OneToOne(mappedBy = "experience")
+    @OneToOne(mappedBy = "experience", cascade = CascadeType.ALL)
     private Payment payment;
 
-    @OneToMany(mappedBy = "experience")
+    @OneToMany(mappedBy = "experience", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Event> events = new HashSet<>();
-    @OneToMany(mappedBy = "experience")
+    @OneToMany(mappedBy = "experience", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<ScheduledEvent> scheduledEvent = new HashSet<>();
 
 
@@ -89,6 +91,7 @@ public class Experience implements EntityId {
     public Experience(
             String title,
             String description,
+            Boolean isApproved,
             ExperienceType experienceType,
             Duration duration,
             List<String> mediaLinks,
@@ -105,6 +108,7 @@ public class Experience implements EntityId {
     ) {
         this.title = title;
         this.description = description;
+        this.isApproved = isApproved;
         this.experienceType = experienceType;
         this.duration = duration;
         this.mediaLinks = mediaLinks;
@@ -143,6 +147,14 @@ public class Experience implements EntityId {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Boolean getApproved() {
+        return isApproved;
+    }
+
+    public void setApproved(Boolean approved) {
+        isApproved = approved;
     }
 
     public ExperienceType getExperienceType() {
