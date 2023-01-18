@@ -1,14 +1,13 @@
 package com.cultegroup.findguide.data.rest;
 
 import com.cultegroup.findguide.data.services.ExperienceService;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import jakarta.transaction.Transactional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.transaction.Transactional;
 
 @Transactional
 @RestController

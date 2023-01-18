@@ -8,10 +8,9 @@ import com.cultegroup.findguide.data.utils.EntityId;
 import com.cultegroup.findguide.data.utils.IdSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.hypersistence.utils.hibernate.type.array.ListArrayType;
+import jakarta.persistence.*;
 import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
 
-import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -19,7 +18,6 @@ import java.util.Set;
 
 @Entity
 @Table(name = "experiencesV3")
-@TypeDef(name = "list-array", typeClass = ListArrayType.class)
 public class Experience implements EntityId {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,20 +31,20 @@ public class Experience implements EntityId {
     private ExperienceType experienceType;
     @Enumerated
     private Duration duration;
-    @Type(type = "list-array")
+    @Type(ListArrayType.class)
     @Column(
             name = "media_links",
             columnDefinition = "text[]"
     )
     private List<String> mediaLinks;
-    @Type(type = "list-array")
+    @Type(ListArrayType.class)
     @Column(
             name = "client_inventory",
             columnDefinition = "text[]"
     )
     private List<String> clientInventory;
     @Type(
-            type = "io.hypersistence.utils.hibernate.type.array.ListArrayType",
+            value = ListArrayType.class,
             parameters = {
                     @org.hibernate.annotations.Parameter(
                             name = ListArrayType.SQL_ARRAY_TYPE,

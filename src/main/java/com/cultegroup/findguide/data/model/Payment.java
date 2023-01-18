@@ -4,17 +4,15 @@ import com.cultegroup.findguide.data.utils.IdSerializer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.hypersistence.utils.hibernate.type.array.ListArrayType;
+import jakarta.persistence.*;
 import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
 
-import javax.persistence.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Entity
 @Table(name = "payments")
-@TypeDef(name = "list-array", typeClass = ListArrayType.class)
 public class Payment {
 
     private static final int GROUP_SIZE = 0;
@@ -34,7 +32,7 @@ public class Payment {
 
     // Данные должны быть в формате [groupSize]:[PricePerOne]
     @JsonIgnore
-    @Type(type = "list-array")
+    @Type(ListArrayType.class)
     @Column(
             name = "discounts",
             columnDefinition = "text[]"

@@ -1,7 +1,5 @@
 package com.cultegroup.findguide.authentication.rest;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.Bucket;
 import com.cultegroup.findguide.authentication.DTO.EmailDTO;
 import com.cultegroup.findguide.authentication.DTO.TokensDTO;
 import com.cultegroup.findguide.authentication.DTO.UserInfoDTO;
@@ -13,14 +11,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.Transactional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.transaction.Transactional;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -30,11 +27,9 @@ import java.util.List;
 public class AuthControllerV1 {
 
     private final AuthService service;
-    private final AmazonS3 s3Client;
 
-    public AuthControllerV1(AuthService service, AmazonS3 s3Cleint) {
+    public AuthControllerV1(AuthService service) {
         this.service = service;
-        this.s3Client = s3Cleint;
     }
 
     @Transactional
@@ -47,7 +42,6 @@ public class AuthControllerV1 {
     public ResponseEntity<?> isExist(
             @Parameter(description = "DTO, содержащее адрес электронной почты.")
             @RequestBody EmailDTO email) {
-        System.out.println(email.email());
         return service.isExist(email);
     }
 

@@ -1,8 +1,8 @@
 package com.cultegroup.findguide.data.model.location;
 
 import com.cultegroup.findguide.data.utils.EntityId;
+import jakarta.persistence.*;
 
-import javax.persistence.*;
 import java.util.List;
 
 @Entity

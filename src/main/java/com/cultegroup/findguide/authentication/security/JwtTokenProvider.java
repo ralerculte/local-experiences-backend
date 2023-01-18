@@ -3,6 +3,8 @@ package com.cultegroup.findguide.authentication.security;
 import com.cultegroup.findguide.authentication.exceptions.JwtAuthenticationException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -11,8 +13,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.servlet.http.HttpServletRequest;
 import java.security.Key;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -45,24 +45,24 @@ public class JwtTokenProvider {
          keyRefresh = Keys.hmacShaKeyFor(secretRefresh.getBytes());
     }
 
-    public String createAccessToken(String username, Long id) {
-        Date accessExpiration = Date.from(
+    public String createAccessToken(String username) {
+        Date dateExpiration = Date.from(
                 LocalDateTime.now()
                         .plusMinutes(5)
                         .atZone(ZoneId.systemDefault())
                         .toInstant()
         );
-        return createToken(username, id, accessExpiration, keyAccess);
+        return createToken(username, dateExpiration, keyAccess);
     }
 
-    public String createRefreshToken(String username, Long id) {
-        Date accessExpiration = Date.from(
+    public String createRefreshToken(String username) {
+        Date dateExpiration = Date.from(
                 LocalDateTime.now()
                         .plusDays(30)
                         .atZone(ZoneId.systemDefault())
                         .toInstant()
         );
-        return createToken(username, id, accessExpiration, keyRefresh);
+        return createToken(username, dateExpiration, keyRefresh);
     }
 
     public boolean validateAccessToken(String token) {
@@ -86,13 +86,12 @@ public class JwtTokenProvider {
         return request.getHeader(header);
     }
 
-    private String createToken(String username, Long id, Date accessExpiration, Key key) {
+    private String createToken(String username, Date dateExpiration, Key key) {
         Claims claims = Jwts.claims().setSubject(username);
-        claims.put(username, id);
 
         return Jwts.builder()
                 .setClaims(claims)
-                .setExpiration(accessExpiration)
+                .setExpiration(dateExpiration)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }

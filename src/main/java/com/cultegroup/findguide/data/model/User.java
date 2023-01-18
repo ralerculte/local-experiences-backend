@@ -3,8 +3,9 @@ package com.cultegroup.findguide.data.model;
 import com.cultegroup.findguide.data.model.enums.Status;
 import com.cultegroup.findguide.data.utils.EntityId;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
 
-import javax.persistence.*;
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 

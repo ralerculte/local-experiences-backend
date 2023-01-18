@@ -1,16 +1,16 @@
 package com.cultegroup.findguide.authentication.services;
 
+import com.cultegroup.findguide.authentication.DTO.AuthResponseDTO;
 import com.cultegroup.findguide.authentication.DTO.EmailDTO;
 import com.cultegroup.findguide.authentication.DTO.TokensDTO;
 import com.cultegroup.findguide.authentication.DTO.UserInfoDTO;
 import com.cultegroup.findguide.authentication.exceptions.InvalidEmailException;
-import com.cultegroup.findguide.authentication.model.RefreshToken;
-import com.cultegroup.findguide.authentication.repo.RefreshRepository;
-import com.cultegroup.findguide.shared.exceptions.HttpStatusException;
-import com.cultegroup.findguide.data.repo.UserRepository;
+import com.cultegroup.findguide.authentication.repo.RefreshRepo;
 import com.cultegroup.findguide.authentication.security.JwtTokenProvider;
 import com.cultegroup.findguide.authentication.utils.ValidatorUtils;
 import com.cultegroup.findguide.data.model.User;
+import com.cultegroup.findguide.data.repo.UserRepository;
+import com.cultegroup.findguide.shared.exceptions.HttpStatusException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,23 +31,27 @@ public class AuthService {
 
     private final AuthenticationManager manager;
     private final UserRepository userRepository;
-    private final RefreshRepository refreshRepository;
     private final JwtTokenProvider provider;
     private final BCryptPasswordEncoder encoder;
     private final ValidatorUtils validatorUtils;
     private final ActivateService activateService;
+    private final RefreshRepo refreshRepo;
 
-    public AuthService(AuthenticationManager manager,
-                       UserRepository userRepository,
-                       RefreshRepository refreshRepository, JwtTokenProvider provider,
-                       BCryptPasswordEncoder encoder, ValidatorUtils validatorUtils, ActivateService activateService) {
+    public AuthService(
+            AuthenticationManager manager,
+            UserRepository userRepository,
+            JwtTokenProvider provider,
+            BCryptPasswordEncoder encoder,
+            ValidatorUtils validatorUtils,
+            ActivateService activateService,
+            RefreshRepo redis) {
         this.manager = manager;
         this.userRepository = userRepository;
-        this.refreshRepository = refreshRepository;
         this.provider = provider;
         this.encoder = encoder;
         this.validatorUtils = validatorUtils;
         this.activateService = activateService;
+        this.refreshRepo = redis;
     }
 
     public ResponseEntity<?> isExist(EmailDTO email) {
@@ -66,8 +70,12 @@ public class AuthService {
 
             User user = validatorUtils.getUserByEmail(email);
 
-            TokensDTO response = createTokens(user, email);
-            return ResponseEntity.ok(response);
+            String accessToken = provider.createAccessToken(user.getEmail());
+            String refreshToken = provider.createAccessToken(user.getEmail());
+
+            refreshRepo.set(email, refreshToken);
+            AuthResponseDTO response = new AuthResponseDTO(user.getId(), accessToken, refreshToken);
+            return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (AuthenticationException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.FORBIDDEN);
         }
@@ -80,10 +88,14 @@ public class AuthService {
             String password = encoder.encode(request.password());
             User user = new User(request.email().toLowerCase(), password);
 
+            String accessToken = provider.createAccessToken(user.getEmail());
+            String refreshToken = provider.createRefreshToken(user.getEmail());
+
             userRepository.save(user);
             activateService.sendActivationMessage(user);
+            refreshRepo.set(request.email(), refreshToken);
 
-            TokensDTO response = createTokens(user, request.email());
+            AuthResponseDTO response = new AuthResponseDTO(user.getId(), accessToken, refreshToken);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (HttpStatusException e) {
             return new ResponseEntity<>(e.getMessage(), e.getStatus());
@@ -94,33 +106,30 @@ public class AuthService {
         String refreshToken = dto.refreshToken();
         if (provider.validateRefreshToken(refreshToken)) {
             String email = provider.getUsernameByRefreshToken(refreshToken);
-            User user = validatorUtils.getUserByEmail(email);
-            RefreshToken refresh = refreshRepository.findByUser(user).orElse(null);
+            String refresh = refreshRepo.get(email);
 
-            if (refresh != null && refresh.getToken().equals(refreshToken)) {
-                String accessToken = provider.createAccessToken(email, user.getId());
-
-                return ResponseEntity.ok(new TokensDTO(user.getId(), accessToken, null));
+            if (refresh != null && refresh.equals(refreshToken)) {
+                String accessToken = provider.createAccessToken(email);
+                return new ResponseEntity<>(new TokensDTO(accessToken, null), HttpStatus.OK);
             }
         }
         return new ResponseEntity<>("Невалидный refresh токен", HttpStatus.BAD_REQUEST);
     }
 
     public ResponseEntity<?> refresh(TokensDTO dto) {
-        String refreshToken = dto.refreshToken();
-        if (refreshToken != null && dto.accessToken() != null
-                && provider.validateRefreshToken(refreshToken)) {
-            String email = provider.getUsernameByRefreshToken(refreshToken);
-            User user = validatorUtils.getUserByEmail(email);
-            RefreshToken refresh = refreshRepository.findByUser(user).orElse(null);
+        String token = dto.refreshToken();
+        if (token != null && dto.accessToken() != null
+                && provider.validateRefreshToken(token)) {
 
-            if (refresh != null && refresh.getToken().equals(refreshToken)) {
-                TokensDTO response = createTokens(user, email);
+            String email = provider.getUsernameByRefreshToken(token);
+            String refresh = refreshRepo.get(email);
 
-                refreshRepository.delete(refresh);
-                refreshRepository.save(new RefreshToken(response.refreshToken(), user));
+            if (refresh != null && refresh.equals(token)) {
+                String accessToken = provider.createAccessToken(email);
+                String refreshToken = provider.createRefreshToken(email);
 
-                return ResponseEntity.ok(response);
+                refreshRepo.set(email, refreshToken);
+                return ResponseEntity.ok(new TokensDTO(accessToken, refreshToken));
             }
         }
         return new ResponseEntity<>("Невалидный refresh токен", HttpStatus.BAD_REQUEST);
@@ -131,13 +140,5 @@ public class AuthService {
         if (!matcher.find()) {
             throw new InvalidEmailException("Невалидный адрес электронной почты.", HttpStatus.BAD_REQUEST);
         }
-    }
-
-    private TokensDTO createTokens(User user, String email) {
-        String accessToken = provider.createAccessToken(email, user.getId());
-        String refreshToken = provider.createRefreshToken(email, user.getId());
-
-        refreshRepository.save(new RefreshToken(refreshToken, user));
-        return new TokensDTO(user.getId(), accessToken, refreshToken);
     }
 }

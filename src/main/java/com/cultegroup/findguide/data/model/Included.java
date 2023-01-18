@@ -2,8 +2,7 @@ package com.cultegroup.findguide.data.model;
 
 import com.cultegroup.findguide.data.utils.IdSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 public class Included {

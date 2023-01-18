@@ -3,8 +3,8 @@ package com.cultegroup.findguide.data.model.location;
 import com.cultegroup.findguide.data.utils.EntityId;
 import com.cultegroup.findguide.data.utils.IdSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.persistence.*;
 
-import javax.persistence.*;
 import java.util.List;
 
 @Entity

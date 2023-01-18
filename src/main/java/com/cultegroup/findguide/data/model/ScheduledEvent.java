@@ -2,8 +2,8 @@ package com.cultegroup.findguide.data.model;
 
 import com.cultegroup.findguide.data.utils.IdSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.persistence.*;
 
-import javax.persistence.*;
 import java.time.LocalDate;
 
 @Entity

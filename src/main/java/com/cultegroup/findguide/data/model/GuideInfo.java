@@ -4,8 +4,7 @@ import com.cultegroup.findguide.data.model.enums.GuideOpinion;
 import com.cultegroup.findguide.data.utils.EntityId;
 import com.cultegroup.findguide.data.utils.IdSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "guides_info")

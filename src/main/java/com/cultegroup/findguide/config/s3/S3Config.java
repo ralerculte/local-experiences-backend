@@ -1,4 +1,4 @@
-package com.cultegroup.findguide.aws.config;
+package com.cultegroup.findguide.config.s3;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;

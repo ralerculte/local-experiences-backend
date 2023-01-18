@@ -4,8 +4,7 @@ import com.cultegroup.findguide.data.model.enums.ActivityLevel;
 import com.cultegroup.findguide.data.model.enums.Preparation;
 import com.cultegroup.findguide.data.utils.IdSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "restrictions")

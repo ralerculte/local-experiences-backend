@@ -1,8 +1,8 @@
 package com.cultegroup.findguide.mail.model;
 
 import com.cultegroup.findguide.data.model.User;
+import jakarta.persistence.*;
 
-import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
