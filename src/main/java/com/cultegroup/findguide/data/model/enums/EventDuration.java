@@ -1,6 +1,6 @@
 package com.cultegroup.findguide.data.model.enums;
 
-public enum Duration {
+public enum EventDuration {
     ONE(60),
     ONE_AND_HALF(90),
     TWO(120),
@@ -35,7 +35,7 @@ public enum Duration {
 
     public final int minutes;
 
-    Duration(int minutes) {
+    EventDuration(int minutes) {
         this.minutes = minutes;
     }
 }

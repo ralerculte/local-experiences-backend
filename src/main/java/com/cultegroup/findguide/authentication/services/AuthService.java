@@ -5,7 +5,7 @@ import com.cultegroup.findguide.authentication.DTO.EmailDTO;
 import com.cultegroup.findguide.authentication.DTO.TokensDTO;
 import com.cultegroup.findguide.authentication.DTO.UserInfoDTO;
 import com.cultegroup.findguide.authentication.exceptions.InvalidEmailException;
-import com.cultegroup.findguide.authentication.repo.RefreshRepo;
+import com.cultegroup.findguide.authentication.repo.RedisRepo;
 import com.cultegroup.findguide.authentication.security.JwtTokenProvider;
 import com.cultegroup.findguide.authentication.utils.ValidatorUtils;
 import com.cultegroup.findguide.data.model.User;
@@ -20,14 +20,17 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
 public class AuthService {
 
-    private final static Pattern VALID_EMAIL_ADDRESS_REGEX =
+    private static final Pattern VALID_EMAIL_ADDRESS_REGEX =
             Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
+    private static final Duration REFRESH_TIMEOUT = Duration.ofDays(25);
 
     private final AuthenticationManager manager;
     private final UserRepository userRepository;
@@ -35,7 +38,7 @@ public class AuthService {
     private final BCryptPasswordEncoder encoder;
     private final ValidatorUtils validatorUtils;
     private final ActivateService activateService;
-    private final RefreshRepo refreshRepo;
+    private final RedisRepo refreshRepo;
 
     public AuthService(
             AuthenticationManager manager,
@@ -44,7 +47,7 @@ public class AuthService {
             BCryptPasswordEncoder encoder,
             ValidatorUtils validatorUtils,
             ActivateService activateService,
-            RefreshRepo redis) {
+            RedisRepo redis) {
         this.manager = manager;
         this.userRepository = userRepository;
         this.provider = provider;
@@ -73,8 +76,9 @@ public class AuthService {
             String accessToken = provider.createAccessToken(user.getEmail());
             String refreshToken = provider.createAccessToken(user.getEmail());
 
-            refreshRepo.set(email, refreshToken);
+            refreshRepo.set(email, refreshToken, REFRESH_TIMEOUT);
             AuthResponseDTO response = new AuthResponseDTO(user.getId(), accessToken, refreshToken);
+
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (AuthenticationException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.FORBIDDEN);
@@ -86,14 +90,17 @@ public class AuthService {
             validateUserInfo(request);
 
             String password = encoder.encode(request.password());
-            User user = new User(request.email().toLowerCase(), password);
+            String email = request.email().toLowerCase();
+            String activationCode = UUID.randomUUID().toString();
+
+            User user = new User(email, password, activationCode);
 
             String accessToken = provider.createAccessToken(user.getEmail());
             String refreshToken = provider.createRefreshToken(user.getEmail());
 
             userRepository.save(user);
             activateService.sendActivationMessage(user);
-            refreshRepo.set(request.email(), refreshToken);
+            refreshRepo.set(request.email(), refreshToken, REFRESH_TIMEOUT);
 
             AuthResponseDTO response = new AuthResponseDTO(user.getId(), accessToken, refreshToken);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
@@ -128,7 +135,7 @@ public class AuthService {
                 String accessToken = provider.createAccessToken(email);
                 String refreshToken = provider.createRefreshToken(email);
 
-                refreshRepo.set(email, refreshToken);
+                refreshRepo.set(email, refreshToken, REFRESH_TIMEOUT);
                 return ResponseEntity.ok(new TokensDTO(accessToken, refreshToken));
             }
         }

@@ -1,7 +1,10 @@
 package com.cultegroup.findguide.authentication.exceptions;
 
-public class InvalidActivationToken extends RuntimeException {
-    public InvalidActivationToken(String message) {
-        super(message);
+import com.cultegroup.findguide.shared.exceptions.HttpStatusException;
+import org.springframework.http.HttpStatus;
+
+public class InvalidActivationToken extends HttpStatusException {
+    public InvalidActivationToken(String message, HttpStatus status) {
+        super(message, status);
     }
 }

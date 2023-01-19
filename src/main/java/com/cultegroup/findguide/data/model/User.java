@@ -1,11 +1,9 @@
 package com.cultegroup.findguide.data.model;
 
-import com.cultegroup.findguide.data.model.enums.Status;
 import com.cultegroup.findguide.data.utils.EntityId;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
-import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -21,10 +19,10 @@ public class User implements EntityId {
     private String name;
     private String surname;
     private String location;
+    @Column(name = "activation_code")
+    private String activationCode;
     @Column(name = "avatar_link")
     private String avatarLink;
-    @Enumerated
-    private Status status;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Experience> experiences = new HashSet<>();
@@ -34,9 +32,10 @@ public class User implements EntityId {
     public User() {
     }
 
-    public User(String email, String password) {
+    public User(String email, String password, String activationCode) {
         this.email = email;
         this.password = password;
+        this.activationCode = activationCode;
     }
 
     public User(
@@ -44,9 +43,8 @@ public class User implements EntityId {
             String password,
             String name,
             String surname,
-            String avatarLink,
+            String activationCode, String avatarLink,
             String location,
-            Status status,
             Set<Experience> experiences,
             Set<Event> events
     ) {
@@ -54,9 +52,9 @@ public class User implements EntityId {
         this.password = password;
         this.name = name;
         this.surname = surname;
+        this.activationCode = activationCode;
         this.avatarLink = avatarLink;
         this.location = location;
-        this.status = status;
         this.experiences = experiences;
         this.events = events;
     }
@@ -117,12 +115,12 @@ public class User implements EntityId {
         this.location = location;
     }
 
-    public Status getStatus() {
-        return status;
+    public String getActivationCode() {
+        return activationCode;
     }
 
-    public void setStatus(Status status) {
-        this.status = status;
+    public void setActivationCode(String activationCode) {
+        this.activationCode = activationCode;
     }
 
     public Set<Experience> getExperiences() {

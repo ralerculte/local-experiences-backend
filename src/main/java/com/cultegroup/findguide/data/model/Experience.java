@@ -1,6 +1,6 @@
 package com.cultegroup.findguide.data.model;
 
-import com.cultegroup.findguide.data.model.enums.Duration;
+import com.cultegroup.findguide.data.model.enums.EventDuration;
 import com.cultegroup.findguide.data.model.enums.ExperienceType;
 import com.cultegroup.findguide.data.model.enums.Language;
 import com.cultegroup.findguide.data.model.location.Location;
@@ -30,7 +30,7 @@ public class Experience implements EntityId {
     @Column(name = "experience_type")
     private ExperienceType experienceType;
     @Enumerated
-    private Duration duration;
+    private EventDuration duration;
     @Type(ListArrayType.class)
     @Column(
             name = "media_links",
@@ -91,7 +91,7 @@ public class Experience implements EntityId {
             String description,
             Boolean isApproved,
             ExperienceType experienceType,
-            Duration duration,
+            EventDuration duration,
             List<String> mediaLinks,
             List<String> clientInventory,
             List<Language> languages,
@@ -163,11 +163,11 @@ public class Experience implements EntityId {
         this.experienceType = experienceType;
     }
 
-    public Duration getDuration() {
+    public EventDuration getDuration() {
         return duration;
     }
 
-    public void setDuration(Duration duration) {
+    public void setDuration(EventDuration duration) {
         this.duration = duration;
     }
 

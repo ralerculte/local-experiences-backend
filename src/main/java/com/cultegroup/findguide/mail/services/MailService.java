@@ -1,10 +1,8 @@
 package com.cultegroup.findguide.mail.services;
 
-import com.cultegroup.findguide.mail.model.UpdateToken;
-import com.cultegroup.findguide.mail.model.VerificationToken;
-import com.cultegroup.findguide.mail.repo.UpdateRepository;
-import com.cultegroup.findguide.mail.repo.VerificationRepository;
 import com.cultegroup.findguide.data.model.User;
+import com.cultegroup.findguide.mail.model.UpdateToken;
+import com.cultegroup.findguide.mail.repo.UpdateRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -17,15 +15,13 @@ import java.util.UUID;
 public class MailService {
 
     private final JavaMailSender sender;
-    private final VerificationRepository verificationRepository;
     private final UpdateRepository passwordRepository;
 
     @Value("${spring.mail.username}")
     private String username;
 
-    public MailService(JavaMailSender sender, VerificationRepository verificationRepository, UpdateRepository passwordRepository) {
+    public MailService(JavaMailSender sender, UpdateRepository passwordRepository) {
         this.sender = sender;
-        this.verificationRepository = verificationRepository;
         this.passwordRepository = passwordRepository;
     }
 
@@ -42,13 +38,10 @@ public class MailService {
     }
 
     public void sendVerificationMessage(User user) {
-        String token = UUID.randomUUID().toString();
+        String code = user.getActivationCode();
         String text = "Для поддтверждения электронной почты перейдите по ссылке:\n"
-                + "http://localhost:4200/activate/" + token;
+                + "http://localhost:4200/activate/" + code;
         String subject = "Активируй впечатления!";
-
-        LocalDateTime dateExpiration = LocalDateTime.now().plusDays(1L);
-        verificationRepository.save(new VerificationToken(token, user, dateExpiration));
 
         sendMail(user.getEmail(), subject, text);
     }
