@@ -32,7 +32,6 @@ public class AuthControllerV1 {
         this.service = service;
     }
 
-    @Transactional
     @PostMapping("/existence")
     @Operation(summary = "Проверка существует ли пользователь с указанной электронной почтой.")
     @ApiResponses(value = {
@@ -45,7 +44,6 @@ public class AuthControllerV1 {
         return service.isExist(email);
     }
 
-    @Transactional
     @PostMapping("/sign-in")
     @Operation(summary = "Авторизация пользователя. В теле ответа возвращаются access и refresh токены.")
     @ApiResponses(value = {
@@ -71,7 +69,6 @@ public class AuthControllerV1 {
         return service.signUp(request);
     }
 
-    @Transactional
     @PostMapping("/update")
     @Operation(summary = "Обновление access токена. В теле ответа возвращается access токен.")
     @ApiResponses(value = {
@@ -84,7 +81,6 @@ public class AuthControllerV1 {
         return service.updateAccessToken(dto);
     }
 
-    @Transactional
     @PostMapping("/refresh")
     @Operation(summary = "Получение новых refresh & access токенов.")
     @ApiResponses(value = {

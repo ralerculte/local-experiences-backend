@@ -11,6 +11,7 @@ import com.cultegroup.findguide.authentication.utils.ValidatorUtils;
 import com.cultegroup.findguide.data.model.User;
 import com.cultegroup.findguide.data.repo.UserRepository;
 import com.cultegroup.findguide.shared.exceptions.HttpStatusException;
+import jakarta.transaction.Transactional;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -64,6 +65,7 @@ public class AuthService {
         return new ResponseEntity<>("Учётная запись не найдена.", HttpStatus.NOT_FOUND);
     }
 
+    @Transactional
     public ResponseEntity<?> signIn(UserInfoDTO request) {
         try {
             validateUserInfo(request);
@@ -85,6 +87,7 @@ public class AuthService {
         }
     }
 
+    @Transactional
     public ResponseEntity<?> signUp(UserInfoDTO request) {
         try {
             validateUserInfo(request);
@@ -109,6 +112,7 @@ public class AuthService {
         }
     }
 
+    @Transactional
     public ResponseEntity<?> updateAccessToken(TokensDTO dto) {
         String refreshToken = dto.refreshToken();
         if (provider.validateRefreshToken(refreshToken)) {
@@ -123,6 +127,7 @@ public class AuthService {
         return new ResponseEntity<>("Невалидный refresh токен", HttpStatus.BAD_REQUEST);
     }
 
+    @Transactional
     public ResponseEntity<?> refresh(TokensDTO dto) {
         String token = dto.refreshToken();
         if (token != null && dto.accessToken() != null
